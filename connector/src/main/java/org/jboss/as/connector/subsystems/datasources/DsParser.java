@@ -27,8 +27,12 @@ import static org.jboss.as.connector.subsystems.common.pool.Constants.BACKGROUND
 import static org.jboss.as.connector.subsystems.common.pool.Constants.BACKGROUNDVALIDATIONMILLIS;
 import static org.jboss.as.connector.subsystems.common.pool.Constants.BLOCKING_TIMEOUT_WAIT_MILLIS;
 import static org.jboss.as.connector.subsystems.common.pool.Constants.CAPACITY_DECREMENTER_CLASS;
+import static org.jboss.as.connector.subsystems.common.pool.Constants.CAPACITY_DECREMENTER_MODULE;
+import static org.jboss.as.connector.subsystems.common.pool.Constants.CAPACITY_DECREMENTER_MODULE_SLOT;
 import static org.jboss.as.connector.subsystems.common.pool.Constants.CAPACITY_DECREMENTER_PROPERTIES;
 import static org.jboss.as.connector.subsystems.common.pool.Constants.CAPACITY_INCREMENTER_CLASS;
+import static org.jboss.as.connector.subsystems.common.pool.Constants.CAPACITY_INCREMENTER_MODULE;
+import static org.jboss.as.connector.subsystems.common.pool.Constants.CAPACITY_INCREMENTER_MODULE_SLOT;
 import static org.jboss.as.connector.subsystems.common.pool.Constants.CAPACITY_INCREMENTER_PROPERTIES;
 import static org.jboss.as.connector.subsystems.common.pool.Constants.IDLETIMEOUTMINUTES;
 import static org.jboss.as.connector.subsystems.common.pool.Constants.INITIAL_POOL_SIZE;
@@ -44,6 +48,8 @@ import static org.jboss.as.connector.subsystems.datasources.Constants.ALLOW_MULT
 import static org.jboss.as.connector.subsystems.datasources.Constants.CHECK_VALID_CONNECTION_SQL;
 import static org.jboss.as.connector.subsystems.datasources.Constants.CONNECTABLE;
 import static org.jboss.as.connector.subsystems.datasources.Constants.CONNECTION_LISTENER_CLASS;
+import static org.jboss.as.connector.subsystems.datasources.Constants.CONNECTION_LISTENER_MODULE;
+import static org.jboss.as.connector.subsystems.datasources.Constants.CONNECTION_LISTENER_MODULE_SLOT;
 import static org.jboss.as.connector.subsystems.datasources.Constants.CONNECTION_LISTENER_PROPERTIES;
 import static org.jboss.as.connector.subsystems.datasources.Constants.CONNECTION_PROPERTIES;
 import static org.jboss.as.connector.subsystems.datasources.Constants.CONNECTION_PROPERTY_VALUE;
@@ -61,6 +67,8 @@ import static org.jboss.as.connector.subsystems.datasources.Constants.DRIVER_NAM
 import static org.jboss.as.connector.subsystems.datasources.Constants.DRIVER_XA_DATASOURCE_CLASS_NAME;
 import static org.jboss.as.connector.subsystems.datasources.Constants.ENABLED;
 import static org.jboss.as.connector.subsystems.datasources.Constants.EXCEPTION_SORTER_CLASSNAME;
+import static org.jboss.as.connector.subsystems.datasources.Constants.EXCEPTION_SORTER_MODULE;
+import static org.jboss.as.connector.subsystems.datasources.Constants.EXCEPTION_SORTER_MODULE_SLOT;
 import static org.jboss.as.connector.subsystems.datasources.Constants.EXCEPTION_SORTER_PROPERTIES;
 import static org.jboss.as.connector.subsystems.datasources.Constants.INTERLEAVING;
 import static org.jboss.as.connector.subsystems.datasources.Constants.JDBC_DRIVER_NAME;
@@ -77,10 +85,14 @@ import static org.jboss.as.connector.subsystems.datasources.Constants.PREPARED_S
 import static org.jboss.as.connector.subsystems.datasources.Constants.QUERY_TIMEOUT;
 import static org.jboss.as.connector.subsystems.datasources.Constants.REAUTHPLUGIN_PROPERTIES;
 import static org.jboss.as.connector.subsystems.datasources.Constants.REAUTH_PLUGIN_CLASSNAME;
+import static org.jboss.as.connector.subsystems.datasources.Constants.REAUTH_PLUGIN_MODULE;
+import static org.jboss.as.connector.subsystems.datasources.Constants.REAUTH_PLUGIN_MODULE_SLOT;
 import static org.jboss.as.connector.subsystems.datasources.Constants.RECOVERY_PASSWORD;
 import static org.jboss.as.connector.subsystems.datasources.Constants.RECOVERY_SECURITY_DOMAIN;
 import static org.jboss.as.connector.subsystems.datasources.Constants.RECOVERY_USERNAME;
 import static org.jboss.as.connector.subsystems.datasources.Constants.RECOVER_PLUGIN_CLASSNAME;
+import static org.jboss.as.connector.subsystems.datasources.Constants.RECOVER_PLUGIN_MODULE;
+import static org.jboss.as.connector.subsystems.datasources.Constants.RECOVER_PLUGIN_MODULE_SLOT;
 import static org.jboss.as.connector.subsystems.datasources.Constants.RECOVER_PLUGIN_PROPERTIES;
 import static org.jboss.as.connector.subsystems.datasources.Constants.SAME_RM_OVERRIDE;
 import static org.jboss.as.connector.subsystems.datasources.Constants.SECURITY_DOMAIN;
@@ -88,6 +100,8 @@ import static org.jboss.as.connector.subsystems.datasources.Constants.SET_TX_QUE
 import static org.jboss.as.connector.subsystems.datasources.Constants.SHARE_PREPARED_STATEMENTS;
 import static org.jboss.as.connector.subsystems.datasources.Constants.SPY;
 import static org.jboss.as.connector.subsystems.datasources.Constants.STALE_CONNECTION_CHECKER_CLASSNAME;
+import static org.jboss.as.connector.subsystems.datasources.Constants.STALE_CONNECTION_CHECKER_MODULE;
+import static org.jboss.as.connector.subsystems.datasources.Constants.STALE_CONNECTION_CHECKER_MODULE_SLOT;
 import static org.jboss.as.connector.subsystems.datasources.Constants.STALE_CONNECTION_CHECKER_PROPERTIES;
 import static org.jboss.as.connector.subsystems.datasources.Constants.TRACKING;
 import static org.jboss.as.connector.subsystems.datasources.Constants.TRACK_STATEMENTS;
@@ -101,6 +115,8 @@ import static org.jboss.as.connector.subsystems.datasources.Constants.USE_JAVA_C
 import static org.jboss.as.connector.subsystems.datasources.Constants.USE_TRY_LOCK;
 import static org.jboss.as.connector.subsystems.datasources.Constants.VALIDATE_ON_MATCH;
 import static org.jboss.as.connector.subsystems.datasources.Constants.VALID_CONNECTION_CHECKER_CLASSNAME;
+import static org.jboss.as.connector.subsystems.datasources.Constants.VALID_CONNECTION_CHECKER_MODULE;
+import static org.jboss.as.connector.subsystems.datasources.Constants.VALID_CONNECTION_CHECKER_MODULE_SLOT;
 import static org.jboss.as.connector.subsystems.datasources.Constants.VALID_CONNECTION_CHECKER_PROPERTIES;
 import static org.jboss.as.connector.subsystems.datasources.Constants.WRAP_XA_RESOURCE;
 import static org.jboss.as.connector.subsystems.datasources.Constants.XADATASOURCE_PROPERTIES;
@@ -1142,7 +1158,7 @@ public class DsParser extends AbstractParser {
                             break;
                         }
                         case REAUTH_PLUGIN: {
-                            parseExtension(reader, tag.getLocalName(), operation, REAUTH_PLUGIN_CLASSNAME, REAUTHPLUGIN_PROPERTIES);
+                            parseExtension(reader, tag.getLocalName(), operation, REAUTH_PLUGIN_CLASSNAME, REAUTHPLUGIN_PROPERTIES, REAUTH_PLUGIN_MODULE, REAUTH_PLUGIN_MODULE_SLOT);
                             break;
                         }
                         default:
@@ -1586,7 +1602,7 @@ public class DsParser extends AbstractParser {
                             break;
                         }
                         case CONNECTION_LISTENER: {
-                            parseExtension(reader, reader.getLocalName(), operation, CONNECTION_LISTENER_CLASS, CONNECTION_LISTENER_PROPERTIES);
+                            parseExtension(reader, reader.getLocalName(), operation, CONNECTION_LISTENER_CLASS, CONNECTION_LISTENER_PROPERTIES, CONNECTION_LISTENER_MODULE, CONNECTION_LISTENER_MODULE_SLOT);
                             break;
                         }
                         case UNKNOWN: {
@@ -1658,7 +1674,7 @@ public class DsParser extends AbstractParser {
                             break;
                         }
                         case CONNECTION_LISTENER: {
-                            parseExtension(reader, reader.getLocalName(), operation, CONNECTION_LISTENER_CLASS, CONNECTION_LISTENER_PROPERTIES);
+                            parseExtension(reader, reader.getLocalName(), operation, CONNECTION_LISTENER_CLASS, CONNECTION_LISTENER_PROPERTIES, CONNECTION_LISTENER_MODULE, CONNECTION_LISTENER_MODULE_SLOT);
                             break;
                         }
                         case INTERLEAVING: {
@@ -1724,11 +1740,11 @@ public class DsParser extends AbstractParser {
                     case START_ELEMENT: {
                         switch (Capacity.Tag.forName(reader.getLocalName())) {
                             case INCREMENTER: {
-                                parseExtension(reader, reader.getLocalName(), operation, CAPACITY_INCREMENTER_CLASS , CAPACITY_INCREMENTER_PROPERTIES);
+                                parseExtension(reader, reader.getLocalName(), operation, CAPACITY_INCREMENTER_CLASS , CAPACITY_INCREMENTER_PROPERTIES, CAPACITY_INCREMENTER_MODULE, CAPACITY_INCREMENTER_MODULE_SLOT);
                                 break;
                             }
                             case DECREMENTER: {
-                                parseExtension(reader, reader.getLocalName(), operation, CAPACITY_DECREMENTER_CLASS , CAPACITY_DECREMENTER_PROPERTIES);
+                                parseExtension(reader, reader.getLocalName(), operation, CAPACITY_DECREMENTER_CLASS , CAPACITY_DECREMENTER_PROPERTIES, CAPACITY_DECREMENTER_MODULE, CAPACITY_DECREMENTER_MODULE_SLOT);
                                 break;
                             }
 
@@ -1778,7 +1794,7 @@ public class DsParser extends AbstractParser {
                             break;
                         }
                         case RECOVER_PLUGIN: {
-                            parseExtension(reader, tag.getLocalName(), operation, RECOVER_PLUGIN_CLASSNAME, RECOVER_PLUGIN_PROPERTIES);
+                            parseExtension(reader, tag.getLocalName(), operation, RECOVER_PLUGIN_CLASSNAME, RECOVER_PLUGIN_PROPERTIES, RECOVER_PLUGIN_MODULE, RECOVER_PLUGIN_MODULE_SLOT);
                             break;
                         }
                         default:
@@ -1871,11 +1887,11 @@ public class DsParser extends AbstractParser {
                             break;
                         }
                         case EXCEPTION_SORTER: {
-                            parseExtension(reader, currTag.getLocalName(), operation, EXCEPTION_SORTER_CLASSNAME, EXCEPTION_SORTER_PROPERTIES);
+                            parseExtension(reader, currTag.getLocalName(), operation, EXCEPTION_SORTER_CLASSNAME, EXCEPTION_SORTER_PROPERTIES, EXCEPTION_SORTER_MODULE, EXCEPTION_SORTER_MODULE_SLOT);
                             break;
                         }
                         case STALE_CONNECTION_CHECKER: {
-                            parseExtension(reader, currTag.getLocalName(), operation, STALE_CONNECTION_CHECKER_CLASSNAME, STALE_CONNECTION_CHECKER_PROPERTIES);
+                            parseExtension(reader, currTag.getLocalName(), operation, STALE_CONNECTION_CHECKER_CLASSNAME, STALE_CONNECTION_CHECKER_PROPERTIES, STALE_CONNECTION_CHECKER_MODULE, STALE_CONNECTION_CHECKER_MODULE_SLOT);
                             break;
                         }
                         case USE_FAST_FAIL: {
@@ -1889,7 +1905,7 @@ public class DsParser extends AbstractParser {
                             break;
                         }
                         case VALID_CONNECTION_CHECKER: {
-                            parseExtension(reader, currTag.getLocalName(), operation, VALID_CONNECTION_CHECKER_CLASSNAME, VALID_CONNECTION_CHECKER_PROPERTIES);
+                            parseExtension(reader, currTag.getLocalName(), operation, VALID_CONNECTION_CHECKER_CLASSNAME, VALID_CONNECTION_CHECKER_PROPERTIES, VALID_CONNECTION_CHECKER_MODULE, VALID_CONNECTION_CHECKER_MODULE_SLOT);
                             break;
                         }
                         default: {

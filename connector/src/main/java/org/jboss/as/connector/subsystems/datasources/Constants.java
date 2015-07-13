@@ -31,6 +31,9 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PRO
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 
+import static org.jboss.as.connector.subsystems.common.pool.Constants.MODULE_NAME;
+import static org.jboss.as.connector.subsystems.common.pool.Constants.MODULE_SLOT_NAME;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -142,6 +145,10 @@ public class Constants {
 
     private static final String CONNECTION_LISTENER_CLASS_NAME = "connection-listener-class";
 
+    private static final String CONNECTION_LISTENER_MODULE_NAME = "connection-listener-module-name";
+
+    private static final String CONNECTION_LISTENER_MODULE_SLOT_NAME = "connection-listener-module-slot";
+
     private static final String CONNECTION_LISTENER_PROPERTY_NAME = "connection-listener-property";
 
     private static final String SETTXQUERYTIMEOUT_NAME = "set-tx-query-timeout";
@@ -166,6 +173,10 @@ public class Constants {
 
     private static final String VALID_CONNECTION_CHECKER_CLASSNAME_NAME = "valid-connection-checker-class-name";
 
+    private static final String VALID_CONNECTION_CHECKER_MODULE_NAME = "valid-connection-checker-module-name";
+
+    private static final String VALID_CONNECTION_CHECKER_MODULE_SLOT_NAME = "valid-connection-checker-module-slot";
+
     private static final String CHECKVALIDCONNECTIONSQL_NAME = "check-valid-connection-sql";
 
     private static final String VALIDATEONMATCH_NAME = "validate-on-match";
@@ -176,7 +187,15 @@ public class Constants {
 
     private static final String STALECONNECTIONCHECKERCLASSNAME_NAME = "stale-connection-checker-class-name";
 
+    private static final String STALECONNECTIONCHECKER_MODULE_NAME = "stale-connection-checker-module-name";
+
+    private static final String STALECONNECTIONCHECKER_MODULE_SLOT_NAME = "stale-connection-checker-module-slot";
+
     private static final String EXCEPTIONSORTERCLASSNAME_NAME = "exception-sorter-class-name";
+
+    private static final String EXCEPTIONSORTER_MODULE_NAME = "exception-sorter-module-name";
+
+    private static final String EXCEPTIONSORTER_MODULE_SLOT_NAME = "exception-sorter-module-slot";
 
     private static final String XADATASOURCEPROPERTIES_NAME = "xa-datasource-properties";
 
@@ -202,6 +221,10 @@ public class Constants {
 
     private static final String REAUTHPLUGIN_CLASSNAME_NAME = "reauth-plugin-class-name";
 
+    private static final String REAUTHPLUGIN_MODULE_NAME = "reauth-plugin-module-name";
+
+    private static final String REAUTHPLUGIN_MODULE_SLOT_NAME = "reauth-plugin-module-slot";
+
     private static final String REAUTHPLUGIN_PROPERTIES_NAME = "reauth-plugin-properties";
 
     private static final String RECOVERY_USERNAME_NAME = "recovery-username";
@@ -211,6 +234,10 @@ public class Constants {
     private static final String RECOVERY_SECURITY_DOMAIN_NAME = "recovery-security-domain";
 
     private static final String RECOVER_PLUGIN_CLASSNAME_NAME = "recovery-plugin-class-name";
+
+    private static final String RECOVER_PLUGIN_MODULE_NAME = "recovery-plugin-module-name";
+
+    private static final String RECOVER_PLUGIN_MODULE_SLOT_NAME = "recovery-plugin-module-slot";
 
     private static final String RECOVER_PLUGIN_PROPERTIES_NAME = "recovery-plugin-properties";
 
@@ -226,7 +253,7 @@ public class Constants {
             .setAllowNull(true)
             .build();
 
-    static final SimpleAttributeDefinition MODULE_SLOT = SimpleAttributeDefinitionBuilder.create("module-slot", ModelType.STRING)
+    static final SimpleAttributeDefinition MODULE_SLOT = SimpleAttributeDefinitionBuilder.create(MODULE_SLOT_NAME, ModelType.STRING)
             .setAllowExpression(false)
             .setAllowNull(true)
             .build();
@@ -429,6 +456,17 @@ public class Constants {
             .setAllowNull(true)
             .setXmlName(org.jboss.jca.common.api.metadata.common.Extension.Attribute.CLASS_NAME.getLocalName())
             .build();
+
+    static SimpleAttributeDefinition CONNECTION_LISTENER_MODULE = new SimpleAttributeDefinitionBuilder(CONNECTION_LISTENER_MODULE_NAME, ModelType.STRING, true)
+            .setXmlName(MODULE_NAME)
+            .setAllowExpression(true)
+            .build();
+
+    static SimpleAttributeDefinition CONNECTION_LISTENER_MODULE_SLOT = new SimpleAttributeDefinitionBuilder(CONNECTION_LISTENER_MODULE_SLOT_NAME, ModelType.STRING, true)
+            .setXmlName(MODULE_SLOT_NAME)
+            .setAllowExpression(false)
+            .build();
+
     static PropertiesAttributeDefinition CONNECTION_LISTENER_PROPERTIES = new PropertiesAttributeDefinition.Builder(CONNECTION_LISTENER_PROPERTY_NAME, true)
             .setXmlName(org.jboss.jca.common.api.metadata.common.Extension.Tag.CONFIG_PROPERTY.getLocalName())
             .setAllowNull(true)
@@ -467,6 +505,16 @@ public class Constants {
             .setAllowExpression(true)
             .build();
 
+    static SimpleAttributeDefinition EXCEPTION_SORTER_MODULE = new SimpleAttributeDefinitionBuilder(EXCEPTIONSORTER_MODULE_NAME, ModelType.STRING, true)
+            .setXmlName(MODULE_NAME)
+            .setAllowExpression(true)
+            .build();
+
+    static SimpleAttributeDefinition EXCEPTION_SORTER_MODULE_SLOT = new SimpleAttributeDefinitionBuilder(EXCEPTIONSORTER_MODULE_SLOT_NAME, ModelType.STRING, true)
+            .setXmlName(MODULE_SLOT_NAME)
+            .setAllowExpression(false)
+            .build();
+
     static PropertiesAttributeDefinition EXCEPTION_SORTER_PROPERTIES = new PropertiesAttributeDefinition.Builder(EXCEPTIONSORTER_PROPERTIES_NAME, true)
             .setXmlName(org.jboss.jca.common.api.metadata.common.Extension.Tag.CONFIG_PROPERTY.getLocalName())
             .setAllowExpression(true)
@@ -479,6 +527,17 @@ public class Constants {
             .setAllowExpression(true)
             .build();
 
+
+    static SimpleAttributeDefinition STALE_CONNECTION_CHECKER_MODULE = new SimpleAttributeDefinitionBuilder(STALECONNECTIONCHECKER_MODULE_NAME, ModelType.STRING, true)
+            .setXmlName(MODULE_NAME)
+            .setAllowExpression(true)
+            .build();
+
+    static SimpleAttributeDefinition STALE_CONNECTION_CHECKER_MODULE_SLOT = new SimpleAttributeDefinitionBuilder(STALECONNECTIONCHECKER_MODULE_SLOT_NAME, ModelType.STRING, true)
+            .setXmlName(MODULE_SLOT_NAME)
+            .setAllowExpression(false)
+            .build();
+
     static PropertiesAttributeDefinition STALE_CONNECTION_CHECKER_PROPERTIES = new PropertiesAttributeDefinition.Builder(STALECONNECTIONCHECKER_PROPERTIES_NAME, true)
             .setXmlName(org.jboss.jca.common.api.metadata.common.Extension.Tag.CONFIG_PROPERTY.getLocalName())
             .setAllowNull(true)
@@ -489,6 +548,16 @@ public class Constants {
     static SimpleAttributeDefinition VALID_CONNECTION_CHECKER_CLASSNAME = new SimpleAttributeDefinitionBuilder(VALID_CONNECTION_CHECKER_CLASSNAME_NAME, ModelType.STRING, true)
             .setXmlName(org.jboss.jca.common.api.metadata.common.Extension.Attribute.CLASS_NAME.getLocalName())
             .setAllowExpression(true)
+            .build();
+
+    static SimpleAttributeDefinition VALID_CONNECTION_CHECKER_MODULE = new SimpleAttributeDefinitionBuilder(VALID_CONNECTION_CHECKER_MODULE_NAME, ModelType.STRING, true)
+            .setXmlName(MODULE_NAME)
+            .setAllowExpression(true)
+            .build();
+
+    static SimpleAttributeDefinition VALID_CONNECTION_CHECKER_MODULE_SLOT = new SimpleAttributeDefinitionBuilder(VALID_CONNECTION_CHECKER_MODULE_SLOT_NAME, ModelType.STRING, true)
+            .setXmlName(MODULE_SLOT_NAME)
+            .setAllowExpression(false)
             .build();
 
     static PropertiesAttributeDefinition VALID_CONNECTION_CHECKER_PROPERTIES = new PropertiesAttributeDefinition.Builder(VALIDCONNECTIONCHECKER_PROPERTIES_NAME, true)
@@ -559,6 +628,16 @@ public class Constants {
             .setAllowExpression(true)
             .build();
 
+    static SimpleAttributeDefinition REAUTH_PLUGIN_MODULE = new SimpleAttributeDefinitionBuilder(REAUTHPLUGIN_MODULE_NAME, ModelType.STRING, true)
+            .setXmlName(MODULE_NAME)
+            .setAllowExpression(true)
+            .build();
+
+    static SimpleAttributeDefinition REAUTH_PLUGIN_MODULE_SLOT = new SimpleAttributeDefinitionBuilder(REAUTHPLUGIN_MODULE_SLOT_NAME, ModelType.STRING, true)
+            .setXmlName(MODULE_SLOT_NAME)
+            .setAllowExpression(false)
+            .build();
+
     static PropertiesAttributeDefinition REAUTHPLUGIN_PROPERTIES = new PropertiesAttributeDefinition.Builder(REAUTHPLUGIN_PROPERTIES_NAME, true)
             .setXmlName(org.jboss.jca.common.api.metadata.common.Extension.Tag.CONFIG_PROPERTY.getLocalName())
             .setAllowNull(true)
@@ -583,10 +662,12 @@ public class Constants {
             org.jboss.as.connector.subsystems.common.pool.Constants.MIN_POOL_SIZE, org.jboss.as.connector.subsystems.common.pool.Constants.INITIAL_POOL_SIZE,
             org.jboss.as.connector.subsystems.common.pool.Constants.POOL_PREFILL, org.jboss.as.connector.subsystems.common.pool.Constants.POOL_USE_STRICT_MIN,
             org.jboss.as.connector.subsystems.common.pool.Constants.CAPACITY_INCREMENTER_CLASS, org.jboss.as.connector.subsystems.common.pool.Constants.CAPACITY_DECREMENTER_CLASS,
+            org.jboss.as.connector.subsystems.common.pool.Constants.CAPACITY_INCREMENTER_MODULE, org.jboss.as.connector.subsystems.common.pool.Constants.CAPACITY_INCREMENTER_MODULE_SLOT,
+            org.jboss.as.connector.subsystems.common.pool.Constants.CAPACITY_DECREMENTER_MODULE, org.jboss.as.connector.subsystems.common.pool.Constants.CAPACITY_DECREMENTER_MODULE_SLOT,
             USERNAME, PASSWORD, SECURITY_DOMAIN,
-            REAUTH_PLUGIN_CLASSNAME,
+            REAUTH_PLUGIN_CLASSNAME, REAUTH_PLUGIN_MODULE, REAUTH_PLUGIN_MODULE_SLOT,
             org.jboss.as.connector.subsystems.common.pool.Constants.POOL_FLUSH_STRATEGY,
-            ALLOW_MULTIPLE_USERS, CONNECTION_LISTENER_CLASS, CONNECTION_PROPERTIES,
+            ALLOW_MULTIPLE_USERS, CONNECTION_LISTENER_CLASS, CONNECTION_LISTENER_MODULE, CONNECTION_LISTENER_MODULE_SLOT, CONNECTION_PROPERTIES,
             PREPARED_STATEMENTS_CACHE_SIZE,
             SHARE_PREPARED_STATEMENTS,
             TRACK_STATEMENTS,
@@ -598,9 +679,9 @@ public class Constants {
             SET_TX_QUERY_TIMEOUT,
             TRANSACTION_ISOLATION,
             CHECK_VALID_CONNECTION_SQL,
-            EXCEPTION_SORTER_CLASSNAME,
-            STALE_CONNECTION_CHECKER_CLASSNAME,
-            VALID_CONNECTION_CHECKER_CLASSNAME,
+            EXCEPTION_SORTER_CLASSNAME, EXCEPTION_SORTER_MODULE, EXCEPTION_SORTER_MODULE_SLOT,
+            STALE_CONNECTION_CHECKER_CLASSNAME, STALE_CONNECTION_CHECKER_MODULE, STALE_CONNECTION_CHECKER_MODULE_SLOT,
+            VALID_CONNECTION_CHECKER_CLASSNAME, VALID_CONNECTION_CHECKER_MODULE, VALID_CONNECTION_CHECKER_MODULE_SLOT,
             org.jboss.as.connector.subsystems.common.pool.Constants.BACKGROUNDVALIDATIONMILLIS,
             org.jboss.as.connector.subsystems.common.pool.Constants.BACKGROUNDVALIDATION,
             org.jboss.as.connector.subsystems.common.pool.Constants.USE_FAST_FAIL,
@@ -645,6 +726,16 @@ public class Constants {
             .setAllowExpression(true)
             .build();
 
+    static SimpleAttributeDefinition RECOVER_PLUGIN_MODULE = new SimpleAttributeDefinitionBuilder(RECOVER_PLUGIN_MODULE_NAME, ModelType.STRING, true)
+            .setXmlName(MODULE_NAME)
+            .setAllowExpression(true)
+            .build();
+
+    static SimpleAttributeDefinition RECOVER_PLUGIN_MODULE_SLOT = new SimpleAttributeDefinitionBuilder(RECOVER_PLUGIN_MODULE_SLOT_NAME, ModelType.STRING, true)
+            .setXmlName(MODULE_SLOT_NAME)
+            .setAllowExpression(false)
+            .build();
+
     static PropertiesAttributeDefinition RECOVER_PLUGIN_PROPERTIES = new PropertiesAttributeDefinition.Builder(RECOVER_PLUGIN_PROPERTIES_NAME, true)
             .setXmlName(org.jboss.jca.common.api.metadata.common.Extension.Tag.CONFIG_PROPERTY.getLocalName())
             .setAllowNull(true)
@@ -662,27 +753,29 @@ public class Constants {
             org.jboss.as.connector.subsystems.common.pool.Constants.MAX_POOL_SIZE, org.jboss.as.connector.subsystems.common.pool.Constants.MIN_POOL_SIZE, org.jboss.as.connector.subsystems.common.pool.Constants.INITIAL_POOL_SIZE,
             org.jboss.as.connector.subsystems.common.pool.Constants.POOL_PREFILL, org.jboss.as.connector.subsystems.common.pool.Constants.POOL_USE_STRICT_MIN, INTERLEAVING,
             org.jboss.as.connector.subsystems.common.pool.Constants.CAPACITY_INCREMENTER_CLASS, org.jboss.as.connector.subsystems.common.pool.Constants.CAPACITY_DECREMENTER_CLASS,
+            org.jboss.as.connector.subsystems.common.pool.Constants.CAPACITY_INCREMENTER_MODULE, org.jboss.as.connector.subsystems.common.pool.Constants.CAPACITY_INCREMENTER_MODULE_SLOT,
+            org.jboss.as.connector.subsystems.common.pool.Constants.CAPACITY_DECREMENTER_MODULE, org.jboss.as.connector.subsystems.common.pool.Constants.CAPACITY_DECREMENTER_MODULE_SLOT,
             NO_TX_SEPARATE_POOL, PAD_XID, SAME_RM_OVERRIDE,
             WRAP_XA_RESOURCE, USERNAME, PASSWORD,
             SECURITY_DOMAIN,
-            REAUTH_PLUGIN_CLASSNAME,
-            org.jboss.as.connector.subsystems.common.pool.Constants.POOL_FLUSH_STRATEGY, ALLOW_MULTIPLE_USERS, CONNECTION_LISTENER_CLASS,
+            REAUTH_PLUGIN_CLASSNAME, REAUTH_PLUGIN_MODULE, REAUTH_PLUGIN_MODULE_SLOT,
+            org.jboss.as.connector.subsystems.common.pool.Constants.POOL_FLUSH_STRATEGY, ALLOW_MULTIPLE_USERS, CONNECTION_LISTENER_CLASS, CONNECTION_LISTENER_MODULE, CONNECTION_LISTENER_MODULE_SLOT,
             PREPARED_STATEMENTS_CACHE_SIZE,
             SHARE_PREPARED_STATEMENTS, TRACK_STATEMENTS,
             ALLOCATION_RETRY, ALLOCATION_RETRY_WAIT_MILLIS,
             org.jboss.as.connector.subsystems.common.pool.Constants.BLOCKING_TIMEOUT_WAIT_MILLIS, org.jboss.as.connector.subsystems.common.pool.Constants.IDLETIMEOUTMINUTES,
             QUERY_TIMEOUT, USE_TRY_LOCK, SET_TX_QUERY_TIMEOUT,
             TRANSACTION_ISOLATION, CHECK_VALID_CONNECTION_SQL,
-            EXCEPTION_SORTER_CLASSNAME,
-            STALE_CONNECTION_CHECKER_CLASSNAME,
-            VALID_CONNECTION_CHECKER_CLASSNAME,
+            EXCEPTION_SORTER_CLASSNAME, EXCEPTION_SORTER_MODULE, EXCEPTION_SORTER_MODULE_SLOT,
+            STALE_CONNECTION_CHECKER_CLASSNAME, STALE_CONNECTION_CHECKER_MODULE, STALE_CONNECTION_CHECKER_MODULE_SLOT,
+            VALID_CONNECTION_CHECKER_CLASSNAME, VALID_CONNECTION_CHECKER_MODULE, VALID_CONNECTION_CHECKER_MODULE_SLOT,
             org.jboss.as.connector.subsystems.common.pool.Constants.BACKGROUNDVALIDATIONMILLIS,
             org.jboss.as.connector.subsystems.common.pool.Constants.BACKGROUNDVALIDATION,
             org.jboss.as.connector.subsystems.common.pool.Constants.USE_FAST_FAIL,
             VALIDATE_ON_MATCH, XA_RESOURCE_TIMEOUT,
             SPY, USE_CCM, ENABLED, CONNECTABLE, STATISTICS_ENABLED, TRACKING,
             RECOVERY_USERNAME, RECOVERY_PASSWORD,
-            RECOVERY_SECURITY_DOMAIN, RECOVER_PLUGIN_CLASSNAME,
+            RECOVERY_SECURITY_DOMAIN, RECOVER_PLUGIN_CLASSNAME, RECOVER_PLUGIN_MODULE, RECOVER_PLUGIN_MODULE_SLOT,
             NO_RECOVERY, URL_PROPERTY};
 
     static final PropertiesAttributeDefinition[] XA_DATASOURCE_PROPERTIES_ATTRIBUTES = new PropertiesAttributeDefinition[]{
