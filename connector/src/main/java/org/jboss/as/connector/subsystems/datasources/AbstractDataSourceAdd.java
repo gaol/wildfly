@@ -22,16 +22,33 @@
 
 package org.jboss.as.connector.subsystems.datasources;
 
+import static org.jboss.as.connector.subsystems.common.pool.Constants.CAPACITY_DECREMENTER_MODULE;
+import static org.jboss.as.connector.subsystems.common.pool.Constants.CAPACITY_DECREMENTER_MODULE_SLOT;
+import static org.jboss.as.connector.subsystems.common.pool.Constants.CAPACITY_INCREMENTER_MODULE;
+import static org.jboss.as.connector.subsystems.common.pool.Constants.CAPACITY_INCREMENTER_MODULE_SLOT;
+import static org.jboss.as.connector.subsystems.datasources.Constants.CONNECTION_LISTENER_MODULE;
+import static org.jboss.as.connector.subsystems.datasources.Constants.CONNECTION_LISTENER_MODULE_SLOT;
 import static org.jboss.as.connector.subsystems.datasources.Constants.DATASOURCE_DRIVER;
 import static org.jboss.as.connector.subsystems.datasources.Constants.ENABLED;
+import static org.jboss.as.connector.subsystems.datasources.Constants.EXCEPTION_SORTER_MODULE;
+import static org.jboss.as.connector.subsystems.datasources.Constants.EXCEPTION_SORTER_MODULE_SLOT;
 import static org.jboss.as.connector.subsystems.datasources.Constants.JNDI_NAME;
 import static org.jboss.as.connector.subsystems.datasources.Constants.JTA;
+import static org.jboss.as.connector.subsystems.datasources.Constants.REAUTH_PLUGIN_MODULE;
+import static org.jboss.as.connector.subsystems.datasources.Constants.REAUTH_PLUGIN_MODULE_SLOT;
+import static org.jboss.as.connector.subsystems.datasources.Constants.RECOVER_PLUGIN_MODULE;
+import static org.jboss.as.connector.subsystems.datasources.Constants.RECOVER_PLUGIN_MODULE_SLOT;
+import static org.jboss.as.connector.subsystems.datasources.Constants.STALE_CONNECTION_CHECKER_MODULE;
+import static org.jboss.as.connector.subsystems.datasources.Constants.STALE_CONNECTION_CHECKER_MODULE_SLOT;
 import static org.jboss.as.connector.subsystems.datasources.Constants.STATISTICS_ENABLED;
+import static org.jboss.as.connector.subsystems.datasources.Constants.VALID_CONNECTION_CHECKER_MODULE;
+import static org.jboss.as.connector.subsystems.datasources.Constants.VALID_CONNECTION_CHECKER_MODULE_SLOT;
 import static org.jboss.as.connector.subsystems.jca.Constants.DEFAULT_NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
 import java.sql.Driver;
 
+import org.jboss.as.connector.logging.ConnectorLogger;
 import org.jboss.as.connector.services.driver.registry.DriverRegistry;
 import org.jboss.as.connector.util.ConnectorServices;
 import org.jboss.as.controller.AbstractAddStepHandler;
@@ -53,6 +70,10 @@ import org.jboss.jca.core.api.management.ManagementRepository;
 import org.jboss.jca.core.spi.mdr.MetadataRepository;
 import org.jboss.jca.core.spi.rar.ResourceAdapterRepository;
 import org.jboss.jca.core.spi.transaction.TransactionIntegration;
+import org.jboss.modules.Module;
+import org.jboss.modules.ModuleClassLoader;
+import org.jboss.modules.ModuleIdentifier;
+import org.jboss.modules.ModuleLoadException;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
@@ -113,12 +134,10 @@ public abstract class AbstractDataSourceAdd extends AbstractAddStepHandler {
 
         final ServiceTarget serviceTarget = context.getServiceTarget();
 
-
         ModelNode node = DATASOURCE_DRIVER.resolveModelAttribute(context, model);
 
         final String driverName = node.asString();
         final ServiceName driverServiceName = ServiceName.JBOSS.append("jdbc-driver", driverName.replaceAll("\\.", "_"));
-
 
         ValueInjectionService<Driver> driverDemanderService = new ValueInjectionService<Driver>();
 
@@ -129,6 +148,15 @@ public abstract class AbstractDataSourceAdd extends AbstractAddStepHandler {
         driverDemanderBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
 
         AbstractDataSourceService dataSourceService = createDataSourceService(dsName, jndiName);
+
+        loadModule(dataSourceService, context, model, VALID_CONNECTION_CHECKER_MODULE, VALID_CONNECTION_CHECKER_MODULE_SLOT);
+        loadModule(dataSourceService, context, model, EXCEPTION_SORTER_MODULE, EXCEPTION_SORTER_MODULE_SLOT);
+        loadModule(dataSourceService, context, model, STALE_CONNECTION_CHECKER_MODULE, STALE_CONNECTION_CHECKER_MODULE_SLOT);
+        loadModule(dataSourceService, context, model, CONNECTION_LISTENER_MODULE, CONNECTION_LISTENER_MODULE_SLOT);
+        loadModule(dataSourceService, context, model, REAUTH_PLUGIN_MODULE, REAUTH_PLUGIN_MODULE_SLOT);
+        loadModule(dataSourceService, context, model, RECOVER_PLUGIN_MODULE, RECOVER_PLUGIN_MODULE_SLOT);
+        loadModule(dataSourceService, context, model, CAPACITY_INCREMENTER_MODULE, CAPACITY_INCREMENTER_MODULE_SLOT);
+        loadModule(dataSourceService, context, model, CAPACITY_DECREMENTER_MODULE, CAPACITY_DECREMENTER_MODULE_SLOT);
 
         final ManagementResourceRegistration registration = context.getResourceRegistrationForUpdate();
         final ServiceName dataSourceServiceName = AbstractDataSourceService.SERVICE_NAME_BASE.append(jndiName);
@@ -167,6 +195,25 @@ public abstract class AbstractDataSourceAdd extends AbstractAddStepHandler {
         dataSourceServiceBuilder.install();
         driverDemanderBuilder.install();
 
+    }
+
+    public static void loadModule(final AbstractDataSourceService dataSourceService, final OperationContext context,
+            final ModelNode model, final SimpleAttributeDefinition moduleAttribute,
+            final SimpleAttributeDefinition moduleSlotAttribute) throws OperationFailedException {
+        if (model.hasDefined(moduleAttribute.getName())) {
+            String moduleName = moduleAttribute.resolveModelAttribute(context, model).asString();
+            String slot = null;
+            if (model.hasDefined(moduleSlotAttribute.getName())) {
+                slot = moduleSlotAttribute.resolveModelAttribute(context, model).asString();
+            }
+            try {
+                ModuleClassLoader classLoader = Module.getCallerModuleLoader()
+                        .loadModule(ModuleIdentifier.create(moduleName, slot)).getClassLoader();
+                dataSourceService.registerClassLoader(classLoader);
+            } catch (ModuleLoadException e) {
+                throw new OperationFailedException(ConnectorLogger.ROOT_LOGGER.failedToLoadModule(moduleName), e);
+            }
+        }
     }
 
     protected abstract void startConfigAndAddDependency(ServiceBuilder<?> dataSourceServiceBuilder,

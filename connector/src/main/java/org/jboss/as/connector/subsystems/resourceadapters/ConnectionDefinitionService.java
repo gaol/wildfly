@@ -24,6 +24,10 @@ package org.jboss.as.connector.subsystems.resourceadapters;
 
 import static org.jboss.as.connector.logging.ConnectorLogger.SUBSYSTEM_RA_LOGGER;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.StartContext;
@@ -36,11 +40,12 @@ import org.jboss.msc.value.InjectedValue;
  * @author <a href="mailto:stefano.maestri@redhat.comdhat.com">Stefano
  *         Maestri</a>
  */
-final class ConnectionDefinitionService implements Service<ModifiableConnDef> {
+public final class ConnectionDefinitionService implements Service<ModifiableConnDef> {
 
     private final ModifiableConnDef value;
     private final InjectedValue<ModifiableResourceAdapter> ra = new InjectedValue<ModifiableResourceAdapter>();
 
+    private final Set<ClassLoader> moduleClassLoaders = Collections.synchronizedSet(new HashSet<>());
 
     /** create an instance **/
     public ConnectionDefinitionService(ModifiableConnDef value) {
@@ -60,13 +65,18 @@ final class ConnectionDefinitionService implements Service<ModifiableConnDef> {
 
     @Override
     public void stop(StopContext context) {
-
+        this.moduleClassLoaders.clear();
     }
 
     public Injector<ModifiableResourceAdapter> getRaInjector() {
         return ra;
     }
 
+    void registerClassLoader(ClassLoader cl) {
+        this.moduleClassLoaders.add(cl);
+    }
 
-
+    public Set<ClassLoader> getRegisteredClassLoaders() {
+        return Collections.unmodifiableSet(this.moduleClassLoaders);
+    }
 }

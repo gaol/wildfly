@@ -31,9 +31,12 @@ import java.net.URL;
 import java.sql.Driver;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 
@@ -44,6 +47,7 @@ import javax.sql.DataSource;
 import org.jboss.as.connector.logging.ConnectorLogger;
 import org.jboss.as.connector.services.driver.InstalledDriver;
 import org.jboss.as.connector.services.driver.registry.DriverRegistry;
+import org.jboss.as.connector.subsystems.resourceadapters.LinkedClassLoader;
 import org.jboss.as.connector.util.Injection;
 import org.jboss.jca.adapters.jdbc.BaseWrapperManagedConnectionFactory;
 import org.jboss.jca.adapters.jdbc.JDBCResourceAdapter;
@@ -118,6 +122,8 @@ public abstract class AbstractDataSourceService implements Service<DataSource> {
     protected CommonDeployment deploymentMD;
     private WildFlyDataSource sqlDataSource;
 
+    private final Set<ClassLoader> moduleClassLoaders = Collections.synchronizedSet(new HashSet<>());
+
     /**
      * The class loader to use. If null the Driver class loader will be used instead.
      */
@@ -146,6 +152,10 @@ public abstract class AbstractDataSourceService implements Service<DataSource> {
         } catch (Throwable t) {
             throw ConnectorLogger.ROOT_LOGGER.deploymentError(t, dsName);
         }
+    }
+
+    void registerClassLoader(ClassLoader cl) {
+        this.moduleClassLoaders.add(cl);
     }
 
     protected abstract AS7DataSourceDeployer getDeployer() throws ValidateException ;
@@ -212,7 +222,7 @@ public abstract class AbstractDataSourceService implements Service<DataSource> {
 
 
         sqlDataSource = null;
-
+        this.moduleClassLoaders.clear();
     }
 
     public CommonDeployment getDeploymentMD() {
@@ -289,7 +299,8 @@ public abstract class AbstractDataSourceService implements Service<DataSource> {
             return classLoader;
         }
         final Class<? extends Driver> clazz = driverValue.getValue().getClass();
-        return ! WildFlySecurityManager.isChecking() ? clazz.getClassLoader() : doPrivileged(new GetClassLoaderAction(clazz));
+        ClassLoader driverCL = ! WildFlySecurityManager.isChecking() ? clazz.getClassLoader() : doPrivileged(new GetClassLoaderAction(clazz));
+        return new LinkedClassLoader(driverCL, moduleClassLoaders);
     }
 
     protected class AS7DataSourceDeployer extends AbstractDsDeployer {

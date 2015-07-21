@@ -22,11 +22,17 @@
 
 package org.jboss.as.connector.subsystems.resourceadapters;
 
+import static org.jboss.as.connector.subsystems.common.pool.Constants.CAPACITY_DECREMENTER_MODULE;
+import static org.jboss.as.connector.subsystems.common.pool.Constants.CAPACITY_DECREMENTER_MODULE_SLOT;
+import static org.jboss.as.connector.subsystems.common.pool.Constants.CAPACITY_INCREMENTER_MODULE;
+import static org.jboss.as.connector.subsystems.common.pool.Constants.CAPACITY_INCREMENTER_MODULE_SLOT;
 import static org.jboss.as.connector.subsystems.jca.Constants.DEFAULT_NAME;
 import static org.jboss.as.connector.subsystems.resourceadapters.CommonAttributes.CONNECTION_DEFINITIONS_NODE_ATTRIBUTE;
 import static org.jboss.as.connector.subsystems.resourceadapters.Constants.ARCHIVE;
 import static org.jboss.as.connector.subsystems.resourceadapters.Constants.JNDINAME;
 import static org.jboss.as.connector.subsystems.resourceadapters.Constants.MODULE;
+import static org.jboss.as.connector.subsystems.resourceadapters.Constants.RECOVERLUGIN_MODULE;
+import static org.jboss.as.connector.subsystems.resourceadapters.Constants.RECOVERLUGIN_MODULE_SLOT;
 import static org.jboss.as.connector.subsystems.resourceadapters.Constants.STATISTICS_ENABLED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
@@ -39,11 +45,16 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.jca.common.api.metadata.common.TransactionSupportEnum;
 import org.jboss.jca.common.api.metadata.resourceadapter.Activation;
 import org.jboss.jca.common.api.validator.ValidateException;
+import org.jboss.modules.Module;
+import org.jboss.modules.ModuleClassLoader;
+import org.jboss.modules.ModuleIdentifier;
+import org.jboss.modules.ModuleLoadException;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
@@ -95,7 +106,6 @@ public class ConnectionDefinitionAdd extends AbstractAddStepHandler {
 
             final ModifiableConnDef connectionDefinitionValue = RaOperationUtil.buildConnectionDefinitionObject(context, resource.getModel(), poolName, isXa);
 
-
             final ServiceTarget serviceTarget = context.getServiceTarget();
 
             final ConnectionDefinitionService service = new ConnectionDefinitionService(connectionDefinitionValue);
@@ -103,6 +113,10 @@ public class ConnectionDefinitionAdd extends AbstractAddStepHandler {
                     .addDependency(raServiceName, ModifiableResourceAdapter.class, service.getRaInjector())
                     .install();
 
+            ModelNode model = resource.getModel();
+            loadModule(service, context, model, RECOVERLUGIN_MODULE, RECOVERLUGIN_MODULE_SLOT);
+            loadModule(service, context, model, CAPACITY_INCREMENTER_MODULE, CAPACITY_INCREMENTER_MODULE_SLOT);
+            loadModule(service, context, model, CAPACITY_DECREMENTER_MODULE, CAPACITY_DECREMENTER_MODULE_SLOT);
 
             ServiceRegistry registry = context.getServiceRegistry(true);
 
@@ -141,5 +155,23 @@ public class ConnectionDefinitionAdd extends AbstractAddStepHandler {
         }
     }
 
+    public static void loadModule(final ConnectionDefinitionService connDefService, final OperationContext context,
+            final ModelNode model, final SimpleAttributeDefinition moduleAttribute,
+            final SimpleAttributeDefinition moduleSlotAttribute) throws OperationFailedException {
+        if (model.hasDefined(moduleAttribute.getName())) {
+            String moduleName = moduleAttribute.resolveModelAttribute(context, model).asString();
+            String slot = null;
+            if (model.hasDefined(moduleSlotAttribute.getName())) {
+                slot = moduleSlotAttribute.resolveModelAttribute(context, model).asString();
+            }
+            try {
+                ModuleClassLoader classLoader = Module.getCallerModuleLoader()
+                        .loadModule(ModuleIdentifier.create(moduleName, slot)).getClassLoader();
+                connDefService.registerClassLoader(classLoader);
+            } catch (ModuleLoadException e) {
+                throw new OperationFailedException(ConnectorLogger.ROOT_LOGGER.failedToLoadModule(moduleName), e);
+            }
+        }
+    }
 
 }
