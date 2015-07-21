@@ -104,15 +104,16 @@ public final class ResourceAdapterXmlDeploymentService extends AbstractResourceA
                 raServiceName = ConnectorServices.getResourceAdapterServiceName(id);
                 this.connectorServicesRegistrationName = id;
             }
+            ClassLoader deployClassLoader = getClassLoader(context.getController().getServiceContainer(), module.getClassLoader(), raxml);
             final WildFlyRaXmlDeployer raDeployer = new WildFlyRaXmlDeployer(context.getChildTarget(), connectorXmlDescriptor.getUrl(),
-                raName, root, module.getClassLoader(), cmd, localRaXml, deploymentServiceName);
+                raName, root, deployClassLoader, cmd, localRaXml, deploymentServiceName);
 
             raDeployer.setConfiguration(config.getValue());
 
             WritableServiceBasedNamingStore.pushOwner(duServiceName);
             ClassLoader old = WildFlySecurityManager.getCurrentContextClassLoaderPrivileged();
             try {
-                WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(module.getClassLoader());
+                WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(deployClassLoader);
                 raxmlDeployment = raDeployer.doDeploy();
             } finally {
                 WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(old);

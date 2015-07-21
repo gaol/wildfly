@@ -827,6 +827,15 @@ public interface ConnectorLogger extends BasicLogger {
 
     @Message(id = 92, value = "Indexed child resources can only be registered if the parent resource supports ordered children. The parent of '%s' is not indexed")
     IllegalStateException indexedChildResourceRegistrationNotAvailable(PathElement address);
+
+    /**
+     * A message indicating a failure to load a general module.
+     *
+     * @param moduleName the module name.
+     * @return the message.
+     */
+    @Message(id = 93, value = "Failed to load module [%s]")
+    String failedToLoadModule(String moduleName);
 }
 
 
