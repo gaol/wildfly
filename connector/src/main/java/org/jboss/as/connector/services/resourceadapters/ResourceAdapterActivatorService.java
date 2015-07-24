@@ -105,14 +105,13 @@ public final class ResourceAdapterActivatorService extends AbstractResourceAdapt
         String pathname = "file://RaActivator" + deploymentName;
 
         try {
-            ClassLoader deployClassLoader = getClassLoader(context.getController().getServiceContainer(), cl, activation);
             ResourceAdapterActivator activator = new ResourceAdapterActivator(context.getChildTarget(), new URL(pathname), deploymentName,
-                    new File(pathname), deployClassLoader, cmd, activation);
+                    new File(pathname), cl, cmd, activation);
             activator.setConfiguration(getConfig().getValue());
             // FIXME!!, this should probably be done by IJ and not the service
             ClassLoader old = Thread.currentThread().getContextClassLoader();
             try {
-               Thread.currentThread().setContextClassLoader(deployClassLoader);
+               Thread.currentThread().setContextClassLoader(cl);
                deploymentMD = activator.doDeploy();
             } finally {
                Thread.currentThread().setContextClassLoader(old);

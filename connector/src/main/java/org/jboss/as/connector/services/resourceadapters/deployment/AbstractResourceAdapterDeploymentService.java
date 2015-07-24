@@ -30,9 +30,7 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.security.PrivilegedAction;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
@@ -51,7 +49,6 @@ import org.jboss.as.connector.services.resourceadapters.ConnectionFactoryReferen
 import org.jboss.as.connector.services.resourceadapters.ConnectionFactoryService;
 import org.jboss.as.connector.services.resourceadapters.deployment.registry.ResourceAdapterDeploymentRegistry;
 import org.jboss.as.connector.subsystems.jca.JcaSubsystemConfiguration;
-import org.jboss.as.connector.subsystems.resourceadapters.LinkedClassLoader;
 import org.jboss.as.connector.util.ConnectorServices;
 import org.jboss.as.connector.util.Injection;
 import org.jboss.as.connector.util.JCAValidatorFactory;
@@ -61,7 +58,6 @@ import org.jboss.as.naming.WritableServiceBasedNamingStore;
 import org.jboss.as.naming.deployment.ContextNames;
 import org.jboss.as.naming.service.BinderService;
 import org.jboss.jca.common.api.metadata.resourceadapter.Activation;
-import org.jboss.jca.common.api.metadata.resourceadapter.ConnectionDefinition;
 import org.jboss.jca.common.api.metadata.spec.ConfigProperty;
 import org.jboss.jca.common.api.metadata.spec.Connector;
 import org.jboss.jca.common.api.metadata.spec.XsdString;
@@ -82,7 +78,6 @@ import org.jboss.logging.BasicLogger;
 import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.AbstractServiceListener;
 import org.jboss.msc.service.ServiceBuilder;
-import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
@@ -125,39 +120,6 @@ public abstract class AbstractResourceAdapterDeploymentService {
 
     public ResourceAdapterDeployment getValue() {
         return ConnectorServices.notNull(value);
-    }
-
-    protected ClassLoader getClassLoader(final ServiceContainer container, final ClassLoader cl, final Activation activation) {
-        if (activation == null) {
-            return cl;
-        }
-        String raName = activation.getArchive();
-        if (raName == null) {
-            raName = connectorServicesRegistrationName;
-        }
-        Set<ClassLoader> classLoaders = new HashSet<>();
-        List<ConnectionDefinition> connDefs = activation.getConnectionDefinitions();
-        if (connDefs != null && connDefs.size() > 0) {
-            for (ConnectionDefinition connDef: connDefs) {
-                String jndiName = connDef.getPoolName();
-                if (jndiName != null) {
-                    ServiceName serviceName = ServiceName.of(ConnectorServices.RA_SERVICE, raName, "extension", jndiName);
-                    ServiceController<?> sc = container.getService(serviceName);
-                    if (sc != null) {
-                        @SuppressWarnings("unchecked")
-                        Set<ClassLoader> extClassLoaders = (Set<ClassLoader>)sc.getValue();
-                        if (extClassLoaders != null && !extClassLoaders.isEmpty()) {
-                            classLoaders.addAll(extClassLoaders);
-                        }
-                    }
-                }
-            }
-        }
-        if (classLoaders.isEmpty()) {
-            return cl;
-        } else {
-            return LinkedClassLoader.createClassLoader(cl, classLoaders);
-        }
     }
 
     public void unregisterAll(String deploymentName) {

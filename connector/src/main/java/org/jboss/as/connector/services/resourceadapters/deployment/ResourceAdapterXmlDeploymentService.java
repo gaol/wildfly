@@ -26,14 +26,19 @@ import static org.jboss.as.connector.logging.ConnectorLogger.DEPLOYMENT_CONNECTO
 
 import java.io.File;
 import java.net.URL;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import org.jboss.as.connector.metadata.deployment.ResourceAdapterDeployment;
 import org.jboss.as.connector.metadata.xmldescriptors.ConnectorXmlDescriptor;
 import org.jboss.as.connector.services.resourceadapters.ResourceAdapterService;
+import org.jboss.as.connector.subsystems.resourceadapters.LinkedClassLoader;
 import org.jboss.as.connector.subsystems.resourceadapters.ModifiableResourceAdapter;
 import org.jboss.as.connector.util.ConnectorServices;
 import org.jboss.as.naming.WritableServiceBasedNamingStore;
 import org.jboss.jca.common.api.metadata.resourceadapter.Activation;
+import org.jboss.jca.common.api.metadata.resourceadapter.ConnectionDefinition;
 import org.jboss.jca.common.api.metadata.spec.Connector;
 import org.jboss.jca.common.metadata.merge.Merger;
 import org.jboss.jca.deployers.DeployersLogger;
@@ -41,6 +46,7 @@ import org.jboss.jca.deployers.common.CommonDeployment;
 import org.jboss.logging.Logger;
 import org.jboss.modules.Module;
 import org.jboss.msc.service.Service;
+import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
@@ -104,7 +110,7 @@ public final class ResourceAdapterXmlDeploymentService extends AbstractResourceA
                 raServiceName = ConnectorServices.getResourceAdapterServiceName(id);
                 this.connectorServicesRegistrationName = id;
             }
-            ClassLoader deployClassLoader = getClassLoader(context.getController().getServiceContainer(), module.getClassLoader(), raxml);
+            ClassLoader deployClassLoader = getClassLoader(context.getController().getServiceContainer(), module.getClassLoader(), raxml, raServiceName);
             final WildFlyRaXmlDeployer raDeployer = new WildFlyRaXmlDeployer(context.getChildTarget(), connectorXmlDescriptor.getUrl(),
                 raName, root, deployClassLoader, cmd, localRaXml, deploymentServiceName);
 
@@ -138,6 +144,37 @@ public final class ResourceAdapterXmlDeploymentService extends AbstractResourceA
     @Override
     public void stop(StopContext context) {
         stopAsync(context, raName, deploymentServiceName);
+    }
+
+    private ClassLoader getClassLoader(final ServiceContainer container, final ClassLoader cl,
+            final Activation activation, final ServiceName raServiceName) {
+        if (activation == null) {
+            return cl;
+        }
+        String raName = raServiceName.getSimpleName();
+        Set<ClassLoader> classLoaders = new HashSet<>();
+        List<ConnectionDefinition> connDefs = activation.getConnectionDefinitions();
+        if (connDefs != null && connDefs.size() > 0) {
+            for (ConnectionDefinition connDef: connDefs) {
+                String jndiName = connDef.getJndiName();
+                if (jndiName != null) {
+                    ServiceName serviceName = ServiceName.of(ConnectorServices.RA_SERVICE, raName, "extension", jndiName);
+                    ServiceController<?> sc = container.getService(serviceName);
+                    if (sc != null) {
+                        @SuppressWarnings("unchecked")
+                        Set<ClassLoader> extClassLoaders = (Set<ClassLoader>)sc.getValue();
+                        if (extClassLoaders != null && !extClassLoaders.isEmpty()) {
+                            classLoaders.addAll(extClassLoaders);
+                        }
+                    }
+                }
+            }
+        }
+        if (classLoaders.isEmpty()) {
+            return cl;
+        } else {
+            return LinkedClassLoader.createClassLoader(cl, classLoaders);
+        }
     }
 
     public CommonDeployment getRaxmlDeployment() {

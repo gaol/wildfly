@@ -112,16 +112,15 @@ public final class ResourceAdapterDeploymentService extends AbstractResourceAdap
         final File root = connectorXmlDescriptor == null ? null : connectorXmlDescriptor.getRoot();
         DEPLOYMENT_CONNECTOR_LOGGER.debugf("DEPLOYMENT name = %s", deploymentName);
         final boolean fromModule = duServiceName.getParent().equals(RaOperationUtil.RAR_MODULE);
-        ClassLoader deployClassLoader = getClassLoader(context.getController().getServiceContainer(), classLoader, activation);
         final WildFLyRaDeployer raDeployer =
-                new WildFLyRaDeployer(context.getChildTarget(), url, deploymentName, root, deployClassLoader, cmd, activation, deploymentServiceName, fromModule);
+                new WildFLyRaDeployer(context.getChildTarget(), url, deploymentName, root, classLoader, cmd, activation, deploymentServiceName, fromModule);
         raDeployer.setConfiguration(config.getValue());
 
         ClassLoader old = WildFlySecurityManager.getCurrentContextClassLoaderPrivileged();
         try {
             try {
                 WritableServiceBasedNamingStore.pushOwner(duServiceName);
-                WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(deployClassLoader);
+                WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(classLoader);
                 raDeployment = raDeployer.doDeploy();
                 deploymentName = raDeployment.getDeploymentName();
             } finally {
@@ -153,7 +152,7 @@ public final class ResourceAdapterDeploymentService extends AbstractResourceAdap
                 DEPLOYMENT_CONNECTOR_LOGGER.debugf("Not activating: %s", deploymentName);
             }
         } catch (Throwable t) {
-            cleanupStartAsync(context, deploymentName, t, duServiceName, deployClassLoader);
+            cleanupStartAsync(context, deploymentName, t, duServiceName, classLoader);
         }
     }
 
