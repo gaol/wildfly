@@ -908,4 +908,7 @@ public interface ConnectorLogger extends BasicLogger {
     @LogMessage(level = ERROR)
     @Message(id =113, value = "Unexcepted error during worker execution : %s")
     void unexceptedWorkerCompletionError(String errorMessage, @Cause Throwable t);
+
+    @Message(id = 114, value = "Failed to load datasource class: %s")
+    OperationFailedException failedToLoadDataSourceClass(String clsName);
 }
