@@ -58,6 +58,7 @@ public class VaultToolTestCase {
   private static final String MASKED_MYPASSWORD_VALUE = "MASK-0UWB5tlhOmKYzJVl9KZaPN";
   private static final String MASKED_MYPASSWORD_VALUE_INCORRECT = "MASK-UWB5tlhOmKYzJVl9KZaPN";
   private static final String SALT_VALUE = "bdfbdf12";
+  private static final String KEY_SIZE_VALUE = "256";
   private static final ByteArrayOutputStream SYSTEM_OUT = new ByteArrayOutputStream();
 
   private static final String getKeystorePath() {
@@ -137,6 +138,7 @@ public class VaultToolTestCase {
     options.put("ITERATION_COUNT", ITERATION_COUNT_VALUE);
     options.put("KEYSTORE_ALIAS", KEYSTORE_ALIAS_VALUE);
     options.put("ENC_FILE_DIR", ENC_FILE_DIR_VALUE);
+    options.put("KEY_SIZE", KEY_SIZE_VALUE);
     return options;
   }
 
@@ -166,6 +168,7 @@ public class VaultToolTestCase {
     addAll(args, "-a", ATTRIBUTE_NAME);
     addAll(args, "-x", VALUE_TO_STORE);
     addAll(args, "-t");
+    addAll(args, "-z", KEY_SIZE_VALUE);
     return args.toArray(new String[0]);
   }
 

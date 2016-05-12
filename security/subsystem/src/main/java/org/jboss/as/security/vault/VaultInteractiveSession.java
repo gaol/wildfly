@@ -35,6 +35,7 @@ public class VaultInteractiveSession {
 
     private String salt, keystoreURL, encDir, keystoreAlias;
     private int iterationCount = 0;
+    private int keySize = 128;
 
     // vault non-interactive session
     private VaultSession vaultNISession = null;
@@ -68,7 +69,12 @@ public class VaultInteractiveSession {
 
             String ic = console.readLine(SecurityLogger.ROOT_LOGGER.enterIterationCount() + " ");
             iterationCount = Integer.parseInt(ic);
-            vaultNISession = new VaultSession(keystoreURL, new String(keystorePasswd), encDir, salt, iterationCount, true);
+
+            String ks = console.readLine(SecurityLogger.ROOT_LOGGER.enterKeySize() + " ");
+            if (ks != null && ks.length() > 0) {
+                keySize = Integer.parseInt(ks);
+            }
+            vaultNISession = new VaultSession(keystoreURL, new String(keystorePasswd), encDir, salt, iterationCount, true, keySize);
 
             while (keystoreAlias == null || keystoreAlias.length() == 0) {
                 keystoreAlias = console.readLine(SecurityLogger.ROOT_LOGGER.enterKeyStoreAlias() + " ");

@@ -64,6 +64,7 @@ public final class VaultSession {
 
     private SecurityVault vault;
     private String vaultAlias;
+    private int keySize = 128;
 
     /**
      * Constructor to create VaultSession.
@@ -93,12 +94,29 @@ public final class VaultSession {
      */
     public VaultSession(String keystoreURL, String keystorePassword, String encryptionDirectory, String salt, int iterationCount, boolean createKeystore)
             throws Exception {
+        this(keystoreURL, keystorePassword, encryptionDirectory, salt, iterationCount, createKeystore, 128);
+    }
+    /**
+     * Constructor to create VaultSession with possibility to create keystore automaticaly.
+     *
+     * @param keystoreURL
+     * @param keystorePassword
+     * @param encryptionDirectory
+     * @param salt
+     * @param iterationCount
+     * @param createKeystore
+     * @param keySize
+     * @throws Exception
+     */
+    public VaultSession(String keystoreURL, String keystorePassword, String encryptionDirectory, String salt, int iterationCount, boolean createKeystore, int keySize)
+            throws Exception {
         this.keystoreURL = keystoreURL;
         this.keystorePassword = keystorePassword;
         this.encryptionDirectory = encryptionDirectory;
         this.salt = salt;
         this.iterationCount = iterationCount;
         this.createKeystore = createKeystore;
+        this.keySize = keySize;
         validate();
     }
 
@@ -111,6 +129,13 @@ public final class VaultSession {
         validateSalt();
         validateIterationCount();
         validateKeystorePassword();
+        validateKeySize();
+    }
+
+    protected void validateKeySize() throws Exception {
+        if (keySize != 128 && keySize != 192 && keySize != 256) {
+            throw SecurityLogger.ROOT_LOGGER.keySizeInValid(String.valueOf(keySize));
+        }
     }
 
     protected void validateKeystoreURL() throws Exception {
@@ -118,7 +143,7 @@ public final class VaultSession {
         File f = new File(keystoreURL);
         if (!f.exists()) {
             if (!createKeystore) {
-                throw SecurityLogger.ROOT_LOGGER.keyStoreDoesnotExistWithExample(keystoreURL, keystoreURL);
+                throw SecurityLogger.ROOT_LOGGER.keyStoreDoesnotExistWithExample(keystoreURL, String.valueOf(keySize), keystoreURL);
             }
         } else if (!f.canWrite() || !f.isFile()) {
             throw SecurityLogger.ROOT_LOGGER.keyStoreNotWritable(keystoreURL);
@@ -222,6 +247,7 @@ public final class VaultSession {
         options.put(PicketBoxSecurityVault.SALT, salt);
         options.put(PicketBoxSecurityVault.ITERATION_COUNT, Integer.toString(iterationCount));
         options.put(PicketBoxSecurityVault.ENC_FILE_DIR, encryptionDirectory);
+        options.put(PicketBoxSecurityVault.KEY_SIZE, String.valueOf(keySize));
         if (createKeystore && !Files.exists(Paths.get(keystoreURL))) {
             options.put(PicketBoxSecurityVault.CREATE_KEYSTORE, Boolean.toString(createKeystore));
         }
@@ -350,6 +376,7 @@ public final class VaultSession {
         sb.append("  <vault-option name=\"SALT\" value=\"" + salt + "\"/>").append("\n");
         sb.append("  <vault-option name=\"ITERATION_COUNT\" value=\"" + iterationCount + "\"/>").append("\n");
         sb.append("  <vault-option name=\"ENC_FILE_DIR\" value=\"" + encryptionDirectory + "\"/>").append("\n");
+        sb.append("  <vault-option name=\"KEY_SIZE\" value=\"" + keySize + "\"/>").append("\n");
         sb.append("</vault>");
         return sb.toString();
     }

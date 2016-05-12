@@ -333,8 +333,8 @@ public interface SecurityLogger extends BasicLogger {
      */
     @Message(id = 37, value = "Keystore '%s' doesn't exist."
             + "\nkeystore could be created: "
-            + "keytool -genseckey -alias Vault -storetype jceks -keyalg AES -keysize 128 -storepass secretsecret -keypass secretsecret -keystore %s")
-    Exception keyStoreDoesnotExistWithExample(final String keystoreURL, final String keystoreURLExample);
+            + "keytool -genseckey -alias Vault -storetype jceks -keyalg AES -keysize %s -storepass secretsecret -keypass secretsecret -keystore %s")
+    Exception keyStoreDoesnotExistWithExample(final String keystoreURL, final String keySize, final String keystoreURLExample);
 
     /**
      * Create an Exception when one cannot write to the KeyStore or it is not a file.
@@ -447,6 +447,15 @@ public interface SecurityLogger extends BasicLogger {
     @Message(id = 49, value = "No console.")
     String noConsole();
 
+
+    /**
+     * Create an exception when invalid key size is specified.
+     *
+     * @return
+     */
+    @Message(id = 50, value = "Keysize: %s is not valid, only 128, 192 256 is valid for AES.")
+    Exception keySizeInValid(final String keySize);
+
     /**
      * i18n version of string from Vault Tool utility
      *
@@ -486,6 +495,14 @@ public interface SecurityLogger extends BasicLogger {
      */
     @Message(id = NONE, value = "Enter iteration count as a number (e.g.: 44):")
     String enterIterationCount();
+
+    /**
+     * i18n version of string from Vault Tool utility
+     *
+     * @return
+     */
+    @Message(id = NONE, value = "Enter key size as a number (e.g.: 128):")
+    String enterKeySize();
 
     /**
      * i18n version of string from Vault Tool utility
@@ -601,6 +618,14 @@ public interface SecurityLogger extends BasicLogger {
      */
     @Message(id = 68, value = "Problem while parsing command line parameters:")
     String problemParsingCommandLineParameters();
+
+    /**
+     * i18n version of string from Vault Tool utility
+     *
+     * @return
+     */
+    @Message(id = NONE, value = "Key Size")
+    String cmdLineKeySize();
 
     /**
      * i18n version of string from Vault Tool utility

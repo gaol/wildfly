@@ -45,6 +45,7 @@ public class VaultTool {
 
     public static final String KEYSTORE_PARAM = "keystore";
     public static final String KEYSTORE_PASSWORD_PARAM = "keystore-password";
+    public static final String KEY_SIZE_PARAM = "key-size";
     public static final String ENC_DIR_PARAM = "enc-dir";
     public static final String SALT_PARAM = "salt";
     public static final String ITERATION_PARAM = "iteration";
@@ -160,6 +161,7 @@ public class VaultTool {
         options.addOption("b", VAULT_BLOCK_PARAM, true, SecurityLogger.ROOT_LOGGER.cmdLineVaultBlock());
         options.addOption("a", ATTRIBUTE_PARAM, true, SecurityLogger.ROOT_LOGGER.cmdLineAttributeName());
         options.addOption("t", CREATE_KEYSTORE_PARAM, false, SecurityLogger.ROOT_LOGGER.cmdLineAutomaticallyCreateKeystore());
+        options.addOption("z", KEY_SIZE_PARAM, true, SecurityLogger.ROOT_LOGGER.cmdLineKeySize());
 
         OptionGroup og = new OptionGroup();
         Option x = new Option("x", SEC_ATTR_VALUE_PARAM, true, SecurityLogger.ROOT_LOGGER.cmdLineSecuredAttribute());
@@ -187,8 +189,10 @@ public class VaultTool {
         String salt = cmdLine.getOptionValue(SALT_PARAM, "12345678");
         int iterationCount = Integer.parseInt(cmdLine.getOptionValue(ITERATION_PARAM, "23"));
         boolean createKeyStore = cmdLine.hasOption(CREATE_KEYSTORE_PARAM);
+        int keySize = Integer.parseInt(cmdLine.getOptionValue(KEY_SIZE_PARAM, "128"));
 
-        nonInteractiveSession = new VaultSession(keystoreURL, keystorePassword, encryptionDirectory, salt, iterationCount, createKeyStore);
+        SecurityLogger.ROOT_LOGGER.warn("KEY SIZE: " + keySize);
+        nonInteractiveSession = new VaultSession(keystoreURL, keystorePassword, encryptionDirectory, salt, iterationCount, createKeyStore, keySize);
 
         nonInteractiveSession.startVaultSession(cmdLine.getOptionValue("alias", "vault"));
 
