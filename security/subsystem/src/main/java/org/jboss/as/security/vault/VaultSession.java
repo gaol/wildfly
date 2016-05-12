@@ -25,6 +25,8 @@ package org.jboss.as.security.vault;
 import java.io.File;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -115,7 +117,9 @@ public final class VaultSession {
 
         File f = new File(keystoreURL);
         if (!f.exists()) {
-            throw SecurityLogger.ROOT_LOGGER.keyStoreDoesnotExistWithExample(keystoreURL, keystoreURL);
+            if (!createKeystore) {
+                throw SecurityLogger.ROOT_LOGGER.keyStoreDoesnotExistWithExample(keystoreURL, keystoreURL);
+            }
         } else if (!f.canWrite() || !f.isFile()) {
             throw SecurityLogger.ROOT_LOGGER.keyStoreNotWritable(keystoreURL);
         }
@@ -218,7 +222,7 @@ public final class VaultSession {
         options.put(PicketBoxSecurityVault.SALT, salt);
         options.put(PicketBoxSecurityVault.ITERATION_COUNT, Integer.toString(iterationCount));
         options.put(PicketBoxSecurityVault.ENC_FILE_DIR, encryptionDirectory);
-        if (createKeystore) {
+        if (createKeystore && !Files.exists(Paths.get(keystoreURL))) {
             options.put(PicketBoxSecurityVault.CREATE_KEYSTORE, Boolean.toString(createKeystore));
         }
         return options;
