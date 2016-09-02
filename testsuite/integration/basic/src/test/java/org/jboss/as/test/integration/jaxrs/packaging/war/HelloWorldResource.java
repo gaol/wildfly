@@ -24,6 +24,7 @@ package org.jboss.as.test.integration.jaxrs.packaging.war;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 
 @Path("helloworld")
 @Produces({"text/plain"})
@@ -32,4 +33,23 @@ public class HelloWorldResource {
     public String getMessage() {
         return "Hello World!";
     }
+
+    @GET
+    @Path("/hello")
+    public String sayHello(@QueryParam("name") String name, @QueryParam("good") boolean good) {
+        if (good) {
+            return "Yes, I am good " + name;
+        }
+        return "No, I am not good " + name;
+    }
+
+    @GET
+    @Path("/helloGood")
+    public String sayHelloGood(@QueryParam("good") boolean good) {
+        if (good) {
+            return "Yes, I am good ";
+        }
+        return "No, I am not good ";
+    }
+
 }

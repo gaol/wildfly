@@ -24,14 +24,17 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUB
 import static org.wildfly.extension.undertow.DeploymentDefinition.CONTEXT_ROOT;
 import static org.wildfly.extension.undertow.DeploymentDefinition.SERVER;
 import static org.wildfly.extension.undertow.DeploymentDefinition.VIRTUAL_HOST;
-
 import io.undertow.servlet.api.ThreadSetupAction.Handle;
 import io.undertow.servlet.handlers.ServletHandler;
+
+import java.lang.reflect.Parameter;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+
 import javax.servlet.Servlet;
 import javax.servlet.ServletException;
+
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
@@ -123,10 +126,19 @@ public class JaxrsDeploymentDefinition extends SimpleResourceDefinition {
             builder.append("%1$s ");
             builder.append(contextRootPath).append('/').append(servletMapping.replaceAll("\\*", "")).append(path);
             builder.append(" - ").append(resource.getResourceClass().getCanonicalName()).append('.').append(resource.getMethod().getName()).append('(');
-            if (resource.getMethod().getParameterTypes().length > 0) {
-                builder.append("...");
+            if (resource.getMethod().getParameters().length > 0) {
+                int i = 0;
+                for (Parameter param: resource.getMethod().getParameters()) {
+                    builder.append(param.getName());
+                    builder.append(" : ");
+                    builder.append(param.getType().getCanonicalName());
+                    if (++i < resource.getMethod().getParameters().length) {
+                        builder.append(", ");
+                    }
+                }
             }
-            builder.append(')');
+            builder.append(") : ");
+            builder.append(resource.getMethod().getReturnType().getCanonicalName());
             return builder.toString().replaceAll("//", "/");
         }
 
