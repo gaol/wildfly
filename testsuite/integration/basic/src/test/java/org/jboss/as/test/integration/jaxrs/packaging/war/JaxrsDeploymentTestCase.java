@@ -57,8 +57,9 @@ public class JaxrsDeploymentTestCase extends ContainerResourceMgmtTestBase {
         WebArchive war = ShrinkWrap.create(WebArchive.class, DEPLOY_NAME);
         war.addPackage(HttpRequest.class.getPackage());
         war.addClasses(JaxrsDeploymentTestCase.class,
-                HelloWorldResource.class,
+                JaxrsDeploymentTestResource.class,
                 HelloWorldPathApplication.class,
+                SubJaxrsDeploymentTestResource.class,
                 ContainerResourceMgmtTestBase.class,
                 AbstractMgmtTestBase.class);
         return war;
@@ -68,25 +69,7 @@ public class JaxrsDeploymentTestCase extends ContainerResourceMgmtTestBase {
     public void testShowResource() throws Exception {
         ModelNode result = getModelControllerClient().execute(showResourceOperation(DEPLOY_NAME)).get("result");
         Assert.assertTrue(result.isDefined());
-
         System.out.println(result);
-        ModelNode methodGetMsg = result.get(0);
-        Assert.assertTrue(methodGetMsg.isDefined());
-        Assert.assertEquals("org.jboss.as.test.integration.jaxrs.packaging.war.HelloWorldResource", methodGetMsg.get("resource-class").asString());
-        Assert.assertEquals("helloworld", methodGetMsg.get("resource-path").asString());
-        Assert.assertEquals("GET /jaxrs-app/hellopath/helloworld - org.jboss.as.test.integration.jaxrs.packaging.war.HelloWorldResource.getMessage() : java.lang.String", methodGetMsg.get("resource-methods").get(0).asString());
-
-        ModelNode methodSayHello = result.get(1);
-        Assert.assertTrue(methodSayHello.isDefined());
-        Assert.assertEquals("org.jboss.as.test.integration.jaxrs.packaging.war.HelloWorldResource", methodSayHello.get("resource-class").asString());
-        Assert.assertEquals("helloworld/hello", methodSayHello.get("resource-path").asString());
-        Assert.assertEquals("GET /jaxrs-app/hellopath/helloworld/hello - org.jboss.as.test.integration.jaxrs.packaging.war.HelloWorldResource.sayHello(arg0 : java.lang.String, arg1 : boolean) : java.lang.String", methodSayHello.get("resource-methods").get(0).asString());
-
-        ModelNode methodSayHelloGood = result.get(2);
-        Assert.assertTrue(methodSayHelloGood.isDefined());
-        Assert.assertEquals("org.jboss.as.test.integration.jaxrs.packaging.war.HelloWorldResource", methodSayHelloGood.get("resource-class").asString());
-        Assert.assertEquals("helloworld/helloGood", methodSayHelloGood.get("resource-path").asString());
-        Assert.assertEquals("GET /jaxrs-app/hellopath/helloworld/helloGood - org.jboss.as.test.integration.jaxrs.packaging.war.HelloWorldResource.sayHelloGood(arg0 : boolean) : java.lang.String", methodSayHelloGood.get("resource-methods").get(0).asString());
 
     }
 

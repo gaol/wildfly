@@ -22,8 +22,11 @@
 
 package org.jboss.as.jaxrs.logging;
 
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.jaxrs.deployment.JaxrsSpringProcessor;
+
 import javax.ws.rs.core.Application;
+
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.jandex.AnnotationTarget;
 import org.jboss.logging.BasicLogger;
@@ -158,4 +161,7 @@ public interface JaxrsLogger extends BasicLogger {
     @LogMessage(level = WARN)
     @Message(id = 13, value = "The context param " + JaxrsSpringProcessor.DISABLE_PROPERTY + " is deprecated, and will be removed in a future release. Please use " + JaxrsSpringProcessor.ENABLE_PROPERTY + " instead")
     void disablePropertyDeprecated();
+
+    @Message(id = 14, value = "Unknown ResourceInvoker type: %s")
+    OperationFailedException unknownResourceInvokerType(String type);
 }
