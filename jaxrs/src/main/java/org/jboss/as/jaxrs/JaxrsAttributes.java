@@ -22,6 +22,7 @@
 package org.jboss.as.jaxrs;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.ObjectListAttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleListAttributeDefinition;
@@ -64,7 +65,19 @@ public class JaxrsAttributes {
     public static final AttributeDefinition JAVA_METHOD = new SimpleAttributeDefinitionBuilder("java-method", ModelType.STRING,
             true).setStorageRuntime().build();
 
+    public static final ObjectTypeAttributeDefinition RESOURCE_PATH = new ObjectTypeAttributeDefinition.Builder(
+            "jaxrs-resource-path", PATH, CONSUMES, PRODUCES, JAVA_METHOD, METHODS).build();
+
+    public static final ObjectListAttributeDefinition RESOURCE_PATHS = new ObjectListAttributeDefinition.Builder(
+            "resource-paths", RESOURCE_PATH).build();
+
+    public static final ObjectTypeAttributeDefinition SUB_RESOURCE_PATH = new ObjectTypeAttributeDefinition.Builder(
+            "sub-jaxrs-resource-path", CLASSNAME, PATH, CONSUMES, PRODUCES, JAVA_METHOD, METHODS).build();
+
+    public static final ObjectListAttributeDefinition SUB_RESOURCE_PATHS = new ObjectListAttributeDefinition.Builder(
+            "sub-resource-paths", SUB_RESOURCE_PATH).build();
+
     public static final ObjectTypeAttributeDefinition JAXRS_RESOURCE = new ObjectTypeAttributeDefinition.Builder(
-            "jaxrs-resource", CLASSNAME, PATH, CONSUMES, PRODUCES, JAVA_METHOD, METHODS).setStorageRuntime().build();
+            "jaxrs-resource", CLASSNAME, RESOURCE_PATHS, SUB_RESOURCE_PATHS).setStorageRuntime().build();
 
 }

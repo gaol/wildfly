@@ -29,7 +29,9 @@ import static org.jboss.as.jaxrs.JaxrsAttributes.JAXRS_RESOURCE;
 import static org.jboss.as.jaxrs.JaxrsAttributes.METHODS;
 import static org.jboss.as.jaxrs.JaxrsAttributes.PATH;
 import static org.jboss.as.jaxrs.JaxrsAttributes.PRODUCES;
+import static org.jboss.as.jaxrs.JaxrsAttributes.RESOURCE_PATHS;
 import static org.jboss.as.jaxrs.JaxrsAttributes.SHOW_RESOURCES;
+import static org.jboss.as.jaxrs.JaxrsAttributes.SUB_RESOURCE_PATHS;
 import static org.wildfly.extension.undertow.DeploymentDefinition.CONTEXT_ROOT;
 import static org.wildfly.extension.undertow.DeploymentDefinition.SERVER;
 import static org.wildfly.extension.undertow.DeploymentDefinition.VIRTUAL_HOST;
@@ -42,9 +44,11 @@ import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 import javax.servlet.Servlet;
 import javax.servlet.ServletException;
@@ -122,12 +126,25 @@ public class ShowJaxrsResourcesHandler implements OperationStepHandler {
                     @Override
                     public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
                         if (registry != null) {
-                            final List<JaxrsResourceDescription> jaxrsResDescriptions = scanEndpoints(contextPath, servletMappings, registry, null);
-                            Collections.sort(jaxrsResDescriptions);
+                            final TreeMap<Class<?>, SubResPathMapEntry> resDescrptions = scanEndpoints(contextPath, servletMappings, registry);
                             final ModelNode response = new ModelNode();
-                            if (jaxrsResDescriptions.size() > 0) {
-                                for (JaxrsResourceDescription resDes: jaxrsResDescriptions) {
-                                    response.add(resDes.toModelNode());
+                            if (resDescrptions.size() > 0) {
+                                for (Map.Entry<Class<?>, SubResPathMapEntry> resDes: resDescrptions.entrySet()) {
+                                    ModelNode resClsNode = new ModelNode();
+                                    resClsNode.get(CLASSNAME.getName()).set(resDes.getKey().getCanonicalName());
+                                    ModelNode resPathNode = resClsNode.get(RESOURCE_PATHS.getName());
+                                    if (resDes.getValue().methodRes != null) {
+                                        for (JaxrsResourceMethodDescription methodRes: resDes.getValue().methodRes) {
+                                            resPathNode.add(methodRes.toModelNode());
+                                        }
+                                    }
+                                    ModelNode subResNode = resClsNode.get(SUB_RESOURCE_PATHS.getName());
+                                    if (resDes.getValue().locatorRes != null) {
+                                        for (JaxrsResourceLocatorDescription locatorRes: resDes.getValue().locatorRes) {
+                                            subResNode.add(locatorRes.toModelNode());
+                                        }
+                                    }
+                                    response.add(resClsNode);
                                 }
                             }
                             context.getResult().set(response);
@@ -142,35 +159,94 @@ public class ShowJaxrsResourcesHandler implements OperationStepHandler {
         }
     }
 
-    private List<JaxrsResourceDescription> scanEndpoints(String contextPath, Collection<String> servletMappings,
-            ResourceMethodRegistry registry, String query) throws OperationFailedException {
-        List<JaxrsResourceDescription> jaxrsRess = new ArrayList<>();
+    private static class SubResPathMapEntry {
+        private List<JaxrsResourceMethodDescription> methodRes;
+        private List<JaxrsResourceLocatorDescription> locatorRes;
+    }
+
+    /**
+     * Root Class Name <--> List<ResourcePathDes>, and sub resourcepath desc list
+     *   for each root class name
+     */
+    private TreeMap<Class<?>, SubResPathMapEntry> scanEndpoints(String contextPath, Collection<String> servletMappings,
+            ResourceMethodRegistry registry) throws OperationFailedException {
+        TreeMap<Class<?>, SubResPathMapEntry> jaxrsResMap = new TreeMap<>(new Comparator<Class<?>>() {
+            @Override
+            public int compare(Class<?> c1, Class<?> c2) {
+                int result = c1.getCanonicalName().compareTo(c2.getCanonicalName());
+                return result;
+            }
+        });
         for (Map.Entry<String, List<ResourceInvoker>> resource : registry.getBounded().entrySet()) {
             String mapping = resource.getKey();
             List<ResourceInvoker> resouceInvokers = resource.getValue();
             for (ResourceInvoker resourceInvoker : resouceInvokers) {
                 if (ResourceMethodInvoker.class.isAssignableFrom(resourceInvoker.getClass())) {
+                    // root resource
                     ResourceMethodInvoker methodInvoker = (ResourceMethodInvoker) resourceInvoker;
-                    JaxrsResourceDescription jaxrsRes = resMethodInvokerDescription(methodInvoker, contextPath, mapping, servletMappings);
-                    jaxrsRess.add(jaxrsRes);
+                    SubResPathMapEntry subEntry = jaxrsResMap.get(methodInvoker.getResourceClass());
+                    if (subEntry == null) {
+                        subEntry = new SubResPathMapEntry();
+                        jaxrsResMap.put(methodInvoker.getResourceClass(), subEntry);
+                    }
+                    if (subEntry.methodRes == null) {
+                        subEntry.methodRes = new ArrayList<>();
+                    }
+                    JaxrsResourceMethodDescription jaxrsRes = resMethodDescription(methodInvoker, contextPath, mapping, servletMappings);
+                    subEntry.methodRes.add(jaxrsRes);
                 } else if (ResourceLocatorInvoker.class.isAssignableFrom(resourceInvoker.getClass())) {
                     // NOTE: sub-resource locator can only analysis the case when the declared returned type is the same as the concrete returned type.
                     ResourceLocatorInvoker locatorInvoker = (ResourceLocatorInvoker) resourceInvoker;
                     Method invokerMethod = locatorInvoker.getMethod();
                     Class<?> cls = invokerMethod.getReturnType();
+                    SubResPathMapEntry subEntry = jaxrsResMap.get(invokerMethod.getDeclaringClass());
+                    if (subEntry == null) {
+                        subEntry = new SubResPathMapEntry();
+                        jaxrsResMap.put(cls, subEntry);
+                    }
+                    if (subEntry.locatorRes == null) {
+                        subEntry.locatorRes = new ArrayList<>();
+                    }
                     ResourceClass resClass =  ResourceBuilder.locatorFromAnnotations(cls);
-                    addSubJaxrsResourceLocators(jaxrsRess, resClass, contextPath, mapping, servletMappings, query);
+                    JaxrsResourceLocatorDescription locatorRes = resLocatorDescription(resClass, contextPath, mapping, servletMappings);
+                    subEntry.locatorRes.add(locatorRes);
                 } else {
                     throw JaxrsLogger.JAXRS_LOGGER.unknownResourceInvokerType(resourceInvoker.getClass().getName());
                 }
             }
         }
-        return jaxrsRess;
+        return jaxrsResMap;
     }
 
-    private JaxrsResourceDescription resMethodInvokerDescription(ResourceMethodInvoker methodInvoker, String contextPath,
+    private JaxrsResourceLocatorDescription resLocatorDescription(ResourceClass resClass, String contextPath, String mapping,
+            Collection<String> servletMappings) {
+        JaxrsResourceLocatorDescription locatorRes = new JaxrsResourceLocatorDescription();
+        locatorRes.resourceClass = resClass.getClazz();
+        for (ResourceMethod resMethod : resClass.getResourceMethods()) {
+            JaxrsResourceMethodDescription jaxrsRes = new JaxrsResourceMethodDescription();
+            jaxrsRes.consumeTypes = resMethod.getConsumes();
+            jaxrsRes.contextPath = contextPath;
+            jaxrsRes.httpMethods = resMethod.getHttpMethods();
+            jaxrsRes.method = resMethod.getMethod();
+            jaxrsRes.produceTypes = resMethod.getProduces();
+            jaxrsRes.resourceClass = resClass.getClazz();
+            String resPath = new StringBuilder(mapping).append("/").append(resMethod.getFullpath()).toString().replace("//", "/");
+            jaxrsRes.resourcePath = resPath;
+            jaxrsRes.servletMappings = servletMappings;
+            addMethodParameters(jaxrsRes, resMethod.getMethod());
+            locatorRes.methodsDescriptions.add(jaxrsRes);
+        }
+        for (ResourceLocator resLocator: resClass.getResourceLocators()) {
+            ResourceClass subResClass = ResourceBuilder.locatorFromAnnotations(resLocator.getReturnType());
+            String subMapping = new StringBuilder(mapping).append("/").append(resLocator.getFullpath()).toString().replace("//", "/");
+            locatorRes.subLocatorDescriptions.add(resLocatorDescription(subResClass, contextPath, subMapping, servletMappings));
+        }
+        return locatorRes;
+    }
+
+    private JaxrsResourceMethodDescription resMethodDescription(ResourceMethodInvoker methodInvoker, String contextPath,
             String mapping, Collection<String> servletMappings) {
-        JaxrsResourceDescription jaxrsRes = new JaxrsResourceDescription();
+        JaxrsResourceMethodDescription jaxrsRes = new JaxrsResourceMethodDescription();
         jaxrsRes.consumeTypes = methodInvoker.getConsumes();
         jaxrsRes.contextPath = contextPath;
         jaxrsRes.httpMethods = methodInvoker.getHttpMethods();
@@ -183,33 +259,7 @@ public class ShowJaxrsResourcesHandler implements OperationStepHandler {
         return jaxrsRes;
     }
 
-    private void addSubJaxrsResourceLocators(List<JaxrsResourceDescription> jaxrsRess, ResourceClass resClass,
-            String contextPath, String mapping, Collection<String> servletMappings, String query) {
-        if (resClass.getClazz().equals(Object.class)) {
-            return;
-        }
-        for (ResourceMethod resMethod : resClass.getResourceMethods()) {
-            JaxrsResourceDescription jaxrsRes = new JaxrsResourceDescription();
-            jaxrsRes.consumeTypes = resMethod.getConsumes();
-            jaxrsRes.contextPath = contextPath;
-            jaxrsRes.httpMethods = resMethod.getHttpMethods();
-            jaxrsRes.method = resMethod.getMethod();
-            jaxrsRes.produceTypes = resMethod.getProduces();
-            jaxrsRes.resourceClass = resClass.getClazz();
-            String resPath = new StringBuilder(mapping).append("/").append(resMethod.getFullpath()).toString().replace("//", "/");
-            jaxrsRes.resourcePath = resPath;
-            jaxrsRes.servletMappings = servletMappings;
-            addMethodParameters(jaxrsRes, resMethod.getMethod());
-            jaxrsRess.add(jaxrsRes);
-        }
-        for (ResourceLocator resLocator: resClass.getResourceLocators()) {
-            ResourceClass subResClass = ResourceBuilder.locatorFromAnnotations(resLocator.getReturnType());
-            String subMapping = new StringBuilder(mapping).append("/").append(resLocator.getFullpath()).toString().replace("//", "/");
-            addSubJaxrsResourceLocators(jaxrsRess, subResClass, contextPath, subMapping, servletMappings, query);
-        }
-    }
-
-    private void addMethodParameters(JaxrsResourceDescription jaxrsRes, Method method) {
+    private void addMethodParameters(JaxrsResourceMethodDescription jaxrsRes, Method method) {
         for (Parameter param: method.getParameters()) {
             ParamInfo paramInfo = new ParamInfo();
             paramInfo.cls = param.getType();
@@ -252,7 +302,37 @@ public class ShowJaxrsResourcesHandler implements OperationStepHandler {
             jaxrsRes.parameters.add(paramInfo);
         }
     }
-    private static class JaxrsResourceDescription implements Comparable<JaxrsResourceDescription> {
+
+    private static class JaxrsResourceLocatorDescription implements Comparable<JaxrsResourceLocatorDescription> {
+
+        private Class<?> resourceClass;
+        private List<JaxrsResourceMethodDescription> methodsDescriptions = new ArrayList<>();
+        private List<JaxrsResourceLocatorDescription> subLocatorDescriptions = new ArrayList<>();
+
+        @Override
+        public int compareTo(JaxrsResourceLocatorDescription o) {
+            return resourceClass.getCanonicalName().compareTo(o.resourceClass.getCanonicalName());
+        }
+
+        public ModelNode toModelNode() {
+            ModelNode node = new ModelNode();
+            node.get(CLASSNAME.getName()).set(resourceClass.getCanonicalName());
+            ModelNode resPathNode = node.get(RESOURCE_PATHS.getName());
+            Collections.sort(methodsDescriptions);
+            for (JaxrsResourceMethodDescription methodRes: methodsDescriptions) {
+                resPathNode.add(methodRes.toModelNode());
+            }
+            ModelNode subResNode = node.get(SUB_RESOURCE_PATHS.getName());
+            Collections.sort(subLocatorDescriptions);
+            for (JaxrsResourceLocatorDescription subLocator: subLocatorDescriptions) {
+                subResNode.add(subLocator.toModelNode());
+            }
+            return node;
+        }
+
+    }
+
+    private static class JaxrsResourceMethodDescription implements Comparable<JaxrsResourceMethodDescription> {
 
         private Class<?> resourceClass;
         private String resourcePath;
@@ -266,7 +346,7 @@ public class ShowJaxrsResourcesHandler implements OperationStepHandler {
         private String contextPath;
 
         @Override
-        public int compareTo(JaxrsResourceDescription other) {
+        public int compareTo(JaxrsResourceMethodDescription other) {
             int result = this.resourcePath.compareTo(other.resourcePath);
             if (result == 0) {
                 result = this.resourceClass.getCanonicalName().compareTo(other.resourceClass.getCanonicalName());
@@ -279,7 +359,6 @@ public class ShowJaxrsResourcesHandler implements OperationStepHandler {
 
         ModelNode toModelNode() {
             ModelNode node = new ModelNode();
-            node.get(CLASSNAME.getName()).set(resourceClass.getCanonicalName());
             node.get(PATH.getName()).set(resourcePath);
             ModelNode consumeNode = node.get(CONSUMES.getName());
             if (consumeTypes != null && consumeTypes.length > 0) {
@@ -343,9 +422,9 @@ public class ShowJaxrsResourcesHandler implements OperationStepHandler {
     }
 
     private static class ParamInfo {
-        private String name; // if specified by @XXParam, it is the value() of that param.
+        private String name;
         private Class<?> cls;
-        private String type; // @PathParam, or @CookieParam, or QueryParam, etc
+        private String type; // @PathParam, or @CookieParam, or @QueryParam, etc
         private String defaultValue;
     }
 }
