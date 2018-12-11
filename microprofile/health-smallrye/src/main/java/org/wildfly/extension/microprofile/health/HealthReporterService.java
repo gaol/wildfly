@@ -22,14 +22,17 @@
 
 package org.wildfly.extension.microprofile.health;
 
-import static org.wildfly.extension.microprofile.health.MicroProfileHealthSubsystemDefinition.HEALTH_REPORTER_CAPABILITY;
+import java.util.function.Supplier;
 
 import io.smallrye.health.ResponseProvider;
 import io.smallrye.health.SmallRyeHealthReporter;
+import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
+import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.as.network.SocketBinding;
 import org.jboss.msc.service.Service;
+import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StopContext;
 
@@ -40,20 +43,39 @@ public class HealthReporterService implements Service<SmallRyeHealthReporter> {
 
     private SmallRyeHealthReporter healthReporter;
 
+    private final Supplier<SocketBinding> httpSocketBinding;
+
     static void install(OperationContext context) {
-        context.getCapabilityServiceTarget()
-                .addCapability(RuntimeCapability.Builder.of(HEALTH_REPORTER_CAPABILITY, SmallRyeHealthReporter.class).build(),
-                        new HealthReporterService())
-                .install();
+        final ServiceBuilder<?> builder = context.getServiceTarget().addService(MicroProfileHealthSubsystemDefinition.HEALTH_REPORTER_SERVICE);
+        Supplier<SocketBinding> httpSocketBinding = builder.requires(context.getCapabilityServiceName("org.wildfly.network.socket-binding", SocketBinding.class, "http"));
+        HealthReporterService healthReporter = new HealthReporterService(httpSocketBinding);
+        builder.setInstance(healthReporter);
+        builder.install();
     }
 
-    private HealthReporterService() {
+    private HealthReporterService(Supplier<SocketBinding> httpSocketBinding) {
+        this.httpSocketBinding = httpSocketBinding;
     }
 
     @Override
     public void start(StartContext context) {
         HealthCheckResponse.setResponseProvider(new ResponseProvider());
         this.healthReporter = new SmallRyeHealthReporter();
+        this.healthReporter.addHealthCheck(new HealthCheck() {
+            private static final String CHECK_NAME = "http-check";
+
+            @Override
+            public HealthCheckResponse call() {
+                HealthCheckResponseBuilder hcb = HealthCheckResponse.named(CHECK_NAME);
+                SocketBinding httpSB = httpSocketBinding.get();
+                if (httpSB.isBound()) {
+                    hcb = hcb.up().withData("port", httpSB.getAbsolutePort());
+                } else {
+                    hcb = hcb.down();
+                }
+                return hcb.build();
+            }
+        });
     }
 
     @Override

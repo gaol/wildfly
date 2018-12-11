@@ -65,6 +65,7 @@ public abstract class MicroProfileHealthTestBase {
     public static Archive<?> deploy() {
         WebArchive war = ShrinkWrap.create(WebArchive.class, "MicroProfileHealthTestCase.war")
                 .addClasses(TestApplication.class, TestApplication.Resource.class, MyProbe.class)
+                .addPackage(MicroProfileHealthTestBase.class.getPackage())
                 .addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml");
         return war;
     }
@@ -79,6 +80,7 @@ public abstract class MicroProfileHealthTestBase {
     @InSequence(1)
     public void testHealthCheckBeforeDeployment() throws Exception {
         checkGlobalOutcome(managementClient, true, null);
+        checkGlobalOutcome(managementClient, true, "http-check");
 
         // deploy the archive
         deployer.deploy("MicroProfileHealthTestCase");
