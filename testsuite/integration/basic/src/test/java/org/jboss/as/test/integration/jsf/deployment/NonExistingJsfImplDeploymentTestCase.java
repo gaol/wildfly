@@ -16,6 +16,9 @@
  */
 package org.jboss.as.test.integration.jsf.deployment;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
+
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 import org.jboss.arquillian.container.test.api.Deployer;
 import org.jboss.arquillian.container.test.api.Deployment;
@@ -29,6 +32,7 @@ import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.jsf.logging.JSFLogger;
 import org.jboss.as.test.shared.ServerReload;
 import org.jboss.as.test.shared.SnapshotRestoreSetupTask;
 import org.jboss.dmr.ModelNode;
@@ -36,11 +40,9 @@ import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import java.io.PrintWriter;
-import java.io.StringWriter;
 
 @RunWith(Arquillian.class)
 @RunAsClient
@@ -60,25 +62,16 @@ public class NonExistingJsfImplDeploymentTestCase {
         return archive;
     }
 
-    private static final PathAddress RA_ADDRESS = PathAddress.pathAddress(ModelDescriptionConstants.SUBSYSTEM, "jsf");
+    private static final PathAddress JSF_ADDRESS = PathAddress.pathAddress(ModelDescriptionConstants.SUBSYSTEM, "jsf");
 
     @Test
-    public void testDeploymentDoesntFailBecauseOfNPE() throws Exception {
+    public void testDeploymentDoesntFailBecauseOfNPE() {
         try {
             deployer.deploy("test_jar");
+            Assert.fail("Expected DeploymentException not thrown");
         } catch (Exception e) {
-            if (e instanceof DeploymentException) {
-                // awkward way to check if the failure is caused by NPE, but e.getCause() doesn't work
-                StringWriter out = new StringWriter();
-                e.printStackTrace(new PrintWriter(out));
-                String stackTrace = out.getBuffer().toString();
-
-                if (stackTrace.contains("Caused by: java.lang.NullPointerException")) {
-                    throw e;
-                }
-            } else {
-                throw e;
-            }
+            Assert.assertTrue(e instanceof DeploymentException);
+            Assert.assertTrue(e.getMessage().contains(JSFLogger.ROOT_LOGGER.invalidDefaultJSFImpl("idontexist").getMessage()));
         }
     }
 
@@ -86,11 +79,9 @@ public class NonExistingJsfImplDeploymentTestCase {
         @Override
         protected void doSetup(ManagementClient client, String containerId) throws Exception {
             ModelControllerClient mcc = client.getControllerClient();
-            ModelNode addRaOperation = Operations.createWriteAttributeOperation(RA_ADDRESS.toModelNode(), "default-jsf-impl-slot", "idontexist");
-            addRaOperation.get("archive").set("wf-ra-ely-security.rar");
-            addRaOperation.get("transaction-support").set("NoTransaction");
-            ModelNode response = mcc.execute(addRaOperation);
-
+            ModelNode writeJSFAttributeOperation = Operations.createWriteAttributeOperation(JSF_ADDRESS.toModelNode(), "default-jsf-impl-slot", "idontexist");
+            ModelNode response = mcc.execute(writeJSFAttributeOperation);
+            Assert.assertEquals(SUCCESS, response.get(OUTCOME).asString());
             ServerReload.executeReloadAndWaitForCompletion(client);
         }
     }
