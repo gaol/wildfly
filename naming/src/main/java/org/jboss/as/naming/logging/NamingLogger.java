@@ -22,15 +22,6 @@
 
 package org.jboss.as.naming.logging;
 
-import static org.jboss.logging.Logger.Level.ERROR;
-import static org.jboss.logging.Logger.Level.INFO;
-import static org.jboss.logging.Logger.Level.WARN;
-
-import java.security.Permission;
-
-import javax.naming.*;
-import javax.naming.spi.ObjectFactory;
-
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.naming.deployment.JndiName;
 import org.jboss.as.naming.subsystem.BindingType;
@@ -43,6 +34,19 @@ import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageLogger;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.msc.service.ServiceName;
+
+import javax.naming.Context;
+import javax.naming.InvalidNameException;
+import javax.naming.Name;
+import javax.naming.NameNotFoundException;
+import javax.naming.NamingException;
+import javax.naming.OperationNotSupportedException;
+import javax.naming.spi.ObjectFactory;
+import java.security.Permission;
+
+import static org.jboss.logging.Logger.Level.ERROR;
+import static org.jboss.logging.Logger.Level.INFO;
+import static org.jboss.logging.Logger.Level.WARN;
 
 /**
  * Date: 17.06.2011
