@@ -35,6 +35,7 @@ import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.as.arquillian.api.ContainerResource;
 import org.jboss.as.arquillian.container.ManagementClient;
 import org.jboss.as.test.integration.common.DefaultConfiguration;
+import org.wildfly.naming.client.WildFlyInitialContextFactory;
 import org.wildfly.naming.java.permission.JndiPermission;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -70,12 +71,11 @@ public class RemoteNamingTestCase {
         return jar;
     }
 
-    public  Context getRemoteContext() throws Exception {
+    public Context getRemoteContext() throws Exception {
         final Properties env = new Properties();
-        env.put(Context.INITIAL_CONTEXT_FACTORY, org.jboss.naming.remote.client.InitialContextFactory.class.getName());
+        env.put(Context.INITIAL_CONTEXT_FACTORY, WildFlyInitialContextFactory.class.getName());
         URI webUri = managementClient.getWebUri();
-        //TODO replace with remote+http once the New WildFly Naming Client is merged
-        URI namingUri = new URI("http-remoting", webUri.getUserInfo(), webUri.getHost(), webUri.getPort(), "", "" ,"");
+        URI namingUri = new URI("remote+http", webUri.getUserInfo(), webUri.getHost(), webUri.getPort(), "", "" ,"");
         env.put(Context.PROVIDER_URL, namingUri.toString());
         env.put("jboss.naming.client.connect.options.org.xnio.Options.SASL_POLICY_NOPLAINTEXT", "false");
         return new InitialContext(DefaultConfiguration.addSecurityProperties(env));
