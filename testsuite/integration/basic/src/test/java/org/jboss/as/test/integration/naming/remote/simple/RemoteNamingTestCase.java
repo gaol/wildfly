@@ -27,6 +27,7 @@ import java.util.Properties;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
+import javax.naming.NamingException;
 
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.RunAsClient;
@@ -43,6 +44,8 @@ import org.junit.runner.RunWith;
 
 import static org.jboss.as.test.shared.integration.ejb.security.PermissionUtils.createPermissionsXmlAsset;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author John Bailey
@@ -113,4 +116,101 @@ public class RemoteNamingTestCase {
                 context.close();
         }
     }
+
+    @Test
+    public void testReadOnlyRemoteBind() throws Exception {
+        Context context = null;
+        try {
+            context = getRemoteContext();
+            context.bind("name", "value");
+            fail("Should fail");
+        } catch (Exception e) {
+            assertTrue(e instanceof NamingException);
+            assertTrue(e.getMessage().contains("WFLYNAM0043"));
+        } finally {
+            if (context != null)
+                context.close();
+        }
+    }
+
+    @Test
+    public void testReadOnlyRemoteReBind() throws Exception {
+        Context context = null;
+        try {
+            context = getRemoteContext();
+            context.rebind("name", "value");
+            fail("Should fail");
+        } catch (Exception e) {
+            assertTrue(e instanceof NamingException);
+            assertTrue(e.getMessage().contains("WFLYNAM0043"));
+        } finally {
+            if (context != null)
+                context.close();
+        }
+    }
+
+    @Test
+    public void testReadOnlyRemoteUnBind() throws Exception {
+        Context context = null;
+        try {
+            context = getRemoteContext();
+            context.unbind("name");
+            fail("Should fail");
+        } catch (Exception e) {
+            assertTrue(e instanceof NamingException);
+            assertTrue(e.getMessage().contains("WFLYNAM0043"));
+        } finally {
+            if (context != null)
+                context.close();
+        }
+    }
+
+    @Test
+    public void testReadOnlyRemoteRename() throws Exception {
+        Context context = null;
+        try {
+            context = getRemoteContext();
+            context.rename("name", "new-name");
+            fail("Should fail");
+        } catch (Exception e) {
+            assertTrue(e instanceof NamingException);
+            assertTrue(e.getMessage().contains("WFLYNAM0043"));
+        } finally {
+            if (context != null)
+                context.close();
+        }
+    }
+
+    @Test
+    public void testReadOnlyRemoteCreateSubContext() throws Exception {
+        Context context = null;
+        try {
+            context = getRemoteContext();
+            context.createSubcontext("subContext");
+            fail("Should fail");
+        } catch (Exception e) {
+            assertTrue(e instanceof NamingException);
+            assertTrue(e.getMessage().contains("WFLYNAM0043"));
+        } finally {
+            if (context != null)
+                context.close();
+        }
+    }
+
+    @Test
+    public void testReadOnlyRemoteDestroySubContext() throws Exception {
+        Context context = null;
+        try {
+            context = getRemoteContext();
+            context.destroySubcontext("subContext");
+            fail("Should fail");
+        } catch (Exception e) {
+            assertTrue(e instanceof NamingException);
+            assertTrue(e.getMessage().contains("WFLYNAM0043"));
+        } finally {
+            if (context != null)
+                context.close();
+        }
+    }
+
 }
