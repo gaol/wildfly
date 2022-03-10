@@ -23,8 +23,10 @@
 package org.wildfly.test.integration.microprofile.health;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,10 +34,13 @@ import java.util.List;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.util.EntityUtils;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.jboss.arquillian.container.test.api.Deployer;
 import org.jboss.arquillian.container.test.api.Deployment;
@@ -52,6 +57,11 @@ import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import javax.json.Json;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
+import javax.json.JsonValue;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2018 Red Hat inc.
@@ -119,5 +129,31 @@ public abstract class MicroProfileHealthApplicationLiveTestBase {
         checkGlobalOutcome(managementClient, "check-live", true, null);
     }
 
+    static void testHTTPEndPoint(String healthURL, boolean mustBeUP, String probeName) throws IOException {
+        try (CloseableHttpClient client = HttpClients.createDefault()) {
+            CloseableHttpResponse resp = client.execute(new HttpGet(healthURL));
+            assertEquals(mustBeUP ? 200 : 503, resp.getStatusLine().getStatusCode());
+            String content = EntityUtils.toString(resp.getEntity());
+            resp.close();
+            try (
+                    JsonReader jsonReader = Json.createReader(new StringReader(content))
+            ) {
+                JsonObject payload = jsonReader.readObject();
+                String outcome = payload.getString("status");
+                assertEquals(mustBeUP ? "UP": "DOWN", outcome);
+
+                if (probeName != null) {
+                    for (JsonValue check : payload.getJsonArray("checks")) {
+                        if (probeName.equals(check.asJsonObject().getString("name"))) {
+                            // probe name found
+                            assertEquals(mustBeUP ? "UP" : "DOWN", check.asJsonObject().getString("status"));
+                            return;
+                        }
+                    }
+                    fail("Probe named " + probeName + " not found in " + content);
+                }
+            }
+        }
+    }
 
 }
