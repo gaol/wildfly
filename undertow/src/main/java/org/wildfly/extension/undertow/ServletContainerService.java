@@ -83,7 +83,7 @@ public final class ServletContainerService implements Service<ServletContainerSe
     private final Integer fileCacheTimeToLive;
     private final int defaultCookieVersion;
     private boolean preservePathOnForward;
-
+    private final String name;
     private volatile ServletContainer servletContainer;
 
     public ServletContainerService(
@@ -94,7 +94,8 @@ public final class ServletContainerService implements Service<ServletContainerSe
             boolean disableCachingForSecuredPages, boolean websocketsEnabled, boolean dispatchWebsocketInvocationToWorker, boolean perMessageDeflate,
             int deflaterLevel, Map<String, String> mimeMappings, List<String> welcomeFiles, Boolean directoryListingEnabled, boolean proactiveAuth,
             int sessionIdLength, Integer maxSessions,
-            CrawlerSessionManagerConfig crawlerSessionManagerConfig, boolean disableFileWatchService, boolean disableSessionIdReuse, int fileCacheMetadataSize, int fileCacheMaxFileSize, Integer fileCacheTimeToLive, int defaultCookieVersion, boolean preservePathOnForward) {
+            CrawlerSessionManagerConfig crawlerSessionManagerConfig, boolean disableFileWatchService, boolean disableSessionIdReuse, int fileCacheMetadataSize,
+            int fileCacheMaxFileSize, Integer fileCacheTimeToLive, int defaultCookieVersion, boolean preservePathOnForward, String name) {
         this.serviceConsumer = serviceConsumer;
         this.sessionPersistenceManager = sessionPersistenceManager;
         this.bufferCache = bufferCache;
@@ -128,6 +129,7 @@ public final class ServletContainerService implements Service<ServletContainerSe
         this.fileCacheTimeToLive = fileCacheTimeToLive;
         this.defaultCookieVersion = defaultCookieVersion;
         this.preservePathOnForward = preservePathOnForward;
+        this.name = name;
     }
 
     @Override
@@ -277,5 +279,9 @@ public final class ServletContainerService implements Service<ServletContainerSe
 
     public boolean isPreservePathOnForward() {
         return preservePathOnForward;
+    }
+
+    public String getName() {
+        return name;
     }
 }

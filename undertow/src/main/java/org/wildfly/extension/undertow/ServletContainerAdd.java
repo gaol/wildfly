@@ -129,7 +129,8 @@ final class ServletContainerAdd extends AbstractBoottimeAddStepHandler {
                 jspConfig, defaultEncoding, useListenerEncoding, ignoreFlush, eagerFilterInit, sessionTimeout,
                 disableCachingForSecuredPages, webSocketInfo != null, webSocketInfo != null && webSocketInfo.isDispatchToWorker(),
                 webSocketInfo != null && webSocketInfo.isPerMessageDeflate(), webSocketInfo == null ? -1 : webSocketInfo.getDeflaterLevel(), mimeMappings,
-                welcomeFiles, directoryListingEnabled, proactiveAuth, sessionIdLength, maxSessions, crawlerSessionManagerConfig, disableFileWatchService, disableSessionIdReususe, fileCacheMetadataSize, fileCacheMaxFileSize, fileCacheTimeToLive, defaultCookieVersion, preservePathOnForward);
+                welcomeFiles, directoryListingEnabled, proactiveAuth, sessionIdLength, maxSessions, crawlerSessionManagerConfig, disableFileWatchService, disableSessionIdReususe, fileCacheMetadataSize,
+                fileCacheMaxFileSize, fileCacheTimeToLive, defaultCookieVersion, preservePathOnForward, context.getCurrentAddressValue());
         sb.setInstance(container);
         sb.setInitialMode(ServiceController.Mode.ON_DEMAND);
         sb.install();

@@ -65,13 +65,13 @@ import io.undertow.websockets.extensions.PerMessageDeflateHandshake;
 import io.undertow.websockets.jsr.ServerWebSocketContainer;
 import io.undertow.websockets.jsr.UndertowContainerProvider;
 import io.undertow.websockets.jsr.WebSocketDeploymentInfo;
-
 import org.apache.jasper.deploy.JspPropertyGroup;
 import org.apache.jasper.deploy.TagLibraryInfo;
 import org.apache.jasper.servlet.JspServlet;
 import org.jboss.as.ee.component.ComponentRegistry;
 import org.jboss.as.naming.ManagedReference;
 import org.jboss.as.naming.ManagedReferenceFactory;
+import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.deployment.SetupAction;
 import org.jboss.as.server.suspend.ServerActivity;
 import org.jboss.as.server.suspend.ServerActivityCallback;
@@ -114,13 +114,13 @@ import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.vfs.VirtualFile;
 import org.wildfly.extension.requestcontroller.ControlPoint;
+import org.wildfly.extension.undertow.ApplicationSecurityDomainDefinition.Registration;
 import org.wildfly.extension.undertow.Host;
 import org.wildfly.extension.undertow.JSPConfig;
 import org.wildfly.extension.undertow.ServletContainerService;
 import org.wildfly.extension.undertow.SessionCookieConfig;
-import org.wildfly.extension.undertow.logging.UndertowLogger;
 import org.wildfly.extension.undertow.UndertowService;
-import org.wildfly.extension.undertow.ApplicationSecurityDomainDefinition.Registration;
+import org.wildfly.extension.undertow.logging.UndertowLogger;
 import org.wildfly.extension.undertow.security.jacc.JACCContextIdHandler;
 import org.wildfly.extension.undertow.session.CodecSessionConfigWrapper;
 import org.wildfly.security.auth.server.HttpAuthenticationFactory;
@@ -135,7 +135,6 @@ import javax.servlet.Servlet;
 import javax.servlet.ServletContainerInitializer;
 import javax.servlet.SessionTrackingMode;
 import javax.servlet.http.HttpServletRequest;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -160,12 +159,11 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 
 import static io.undertow.servlet.api.SecurityInfo.EmptyRoleSemantic.AUTHENTICATE;
 import static io.undertow.servlet.api.SecurityInfo.EmptyRoleSemantic.DENY;
 import static io.undertow.servlet.api.SecurityInfo.EmptyRoleSemantic.PERMIT;
-
-import org.jboss.as.server.ServerEnvironment;
 
 /**
  * Service that builds up the undertow metadata.
@@ -179,6 +177,9 @@ public class UndertowDeploymentInfoService implements Service<DeploymentInfo> {
 
     public static final String DEFAULT_SERVLET_NAME = "default";
     public static final String UNDERTOW = "undertow";
+
+    public static final String GLOBAL_SESSION_TRACKING_MODES_PROP_PREFIX = "undertow.session.tracking-modes";
+    private final Pattern trackingModesPattern = Pattern.compile("[\\s,]+");
 
     private DeploymentInfo deploymentInfo;
     private Registration registration;
@@ -374,6 +375,25 @@ public class UndertowDeploymentInfoService implements Service<DeploymentInfo> {
                         }
                     }
                     config.setSessionTrackingModes(trackingModes);
+                } else {
+                    final Set<SessionTrackingMode> trackingModes = globalSessionTrackingModes();
+                    if (!trackingModes.isEmpty()) {
+                        if (trackingModes.size() > 1 && trackingModes.contains(SessionTrackingMode.SSL)) {
+                            throw UndertowLogger.ROOT_LOGGER.sslTrackingModeOnly();
+                        }
+                        config.setSessionTrackingModes(trackingModes);
+                    }
+                }
+            } else {
+                final Set<SessionTrackingMode> trackingModes = globalSessionTrackingModes();
+                if (!trackingModes.isEmpty()) {
+                    if (trackingModes.size() > 1 && trackingModes.contains(SessionTrackingMode.SSL)) {
+                        throw UndertowLogger.ROOT_LOGGER.sslTrackingModeOnly();
+                    }
+                    if (config == null) {
+                        config = new ServletSessionConfig();
+                    }
+                    config.setSessionTrackingModes(trackingModes);
                 }
             }
             if(!sessionTimeoutSet) {
@@ -425,6 +445,24 @@ public class UndertowDeploymentInfoService implements Service<DeploymentInfo> {
             Thread.currentThread().setContextClassLoader(oldTccl);
         }
 
+    }
+
+    private Set<SessionTrackingMode> globalSessionTrackingModes() throws StartException {
+        Set<SessionTrackingMode> modes = new HashSet<>();
+        // first check system property setting
+        final String trackingModes = System.getProperty(GLOBAL_SESSION_TRACKING_MODES_PROP_PREFIX + "." + container.get().getName(),
+                System.getProperty(GLOBAL_SESSION_TRACKING_MODES_PROP_PREFIX));
+        if (trackingModes != null) {
+            for (String str: trackingModesPattern.split(trackingModes)) {
+                try {
+                    SessionTrackingMode mode = SessionTrackingMode.valueOf(str);
+                    modes.add(mode);
+                } catch (IllegalArgumentException e) {
+                    throw UndertowLogger.ROOT_LOGGER.unknownTrackingMode(str);
+                }
+            }
+        }
+        return modes;
     }
 
     @Override

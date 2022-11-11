@@ -442,4 +442,9 @@ public interface UndertowLogger extends BasicLogger {
     @Message(id = 110, value = "The use of security realms at runtime is unsupported.")
     OperationFailedException runtimeSecurityRealmUnsupported();
 
+    @Message(id = 111, value = "Unknown session tracking mode: %s")
+    StartException unknownTrackingMode(String trackingMode);
+
+    @Message(id = 112, value = "Session tracking mode SSL cannot be used with other tracking mode")
+    StartException sslTrackingModeOnly();
 }
