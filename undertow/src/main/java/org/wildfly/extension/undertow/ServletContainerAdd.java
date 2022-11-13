@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a> (c) 2013 Red Hat Inc.
@@ -90,6 +91,8 @@ final class ServletContainerAdd extends AbstractBoottimeAddStepHandler {
         final Integer fileCacheTimeToLive = fileCacheTtlNode.isDefined()  ? fileCacheTtlNode.asInt() : null;
         final int defaultCookieVersion = ServletContainerDefinition.DEFAULT_COOKIE_VERSION.resolveModelAttribute(context, model).asInt();
         final boolean preservePathOnForward = ServletContainerDefinition.PRESERVE_PATH_ON_FORWARD.resolveModelAttribute(context, model).asBoolean();
+        final List<String> globalSessionTrackingModes = ServletContainerDefinition.SESSION_TRACKING_MODES.resolveModelAttribute(context, model)
+                .asListOrEmpty().stream().map(ModelNode::asString).collect(Collectors.toList());
 
         Boolean directoryListingEnabled = null;
         if(model.hasDefined(Constants.DIRECTORY_LISTING)) {
@@ -130,7 +133,7 @@ final class ServletContainerAdd extends AbstractBoottimeAddStepHandler {
                 disableCachingForSecuredPages, webSocketInfo != null, webSocketInfo != null && webSocketInfo.isDispatchToWorker(),
                 webSocketInfo != null && webSocketInfo.isPerMessageDeflate(), webSocketInfo == null ? -1 : webSocketInfo.getDeflaterLevel(), mimeMappings,
                 welcomeFiles, directoryListingEnabled, proactiveAuth, sessionIdLength, maxSessions, crawlerSessionManagerConfig, disableFileWatchService, disableSessionIdReususe, fileCacheMetadataSize,
-                fileCacheMaxFileSize, fileCacheTimeToLive, defaultCookieVersion, preservePathOnForward, context.getCurrentAddressValue());
+                fileCacheMaxFileSize, fileCacheTimeToLive, defaultCookieVersion, preservePathOnForward, context.getCurrentAddressValue(), globalSessionTrackingModes);
         sb.setInstance(container);
         sb.setInitialMode(ServiceController.Mode.ON_DEMAND);
         sb.install();

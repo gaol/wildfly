@@ -84,6 +84,7 @@ public final class ServletContainerService implements Service<ServletContainerSe
     private final int defaultCookieVersion;
     private boolean preservePathOnForward;
     private final String name;
+    private final List<String> globalSessionTrackingModes;
     private volatile ServletContainer servletContainer;
 
     public ServletContainerService(
@@ -95,7 +96,7 @@ public final class ServletContainerService implements Service<ServletContainerSe
             int deflaterLevel, Map<String, String> mimeMappings, List<String> welcomeFiles, Boolean directoryListingEnabled, boolean proactiveAuth,
             int sessionIdLength, Integer maxSessions,
             CrawlerSessionManagerConfig crawlerSessionManagerConfig, boolean disableFileWatchService, boolean disableSessionIdReuse, int fileCacheMetadataSize,
-            int fileCacheMaxFileSize, Integer fileCacheTimeToLive, int defaultCookieVersion, boolean preservePathOnForward, String name) {
+            int fileCacheMaxFileSize, Integer fileCacheTimeToLive, int defaultCookieVersion, boolean preservePathOnForward, String name, final List<String> globalSessionTrackingModes) {
         this.serviceConsumer = serviceConsumer;
         this.sessionPersistenceManager = sessionPersistenceManager;
         this.bufferCache = bufferCache;
@@ -130,6 +131,7 @@ public final class ServletContainerService implements Service<ServletContainerSe
         this.defaultCookieVersion = defaultCookieVersion;
         this.preservePathOnForward = preservePathOnForward;
         this.name = name;
+        this.globalSessionTrackingModes = globalSessionTrackingModes;
     }
 
     @Override
@@ -283,5 +285,9 @@ public final class ServletContainerService implements Service<ServletContainerSe
 
     public String getName() {
         return name;
+    }
+
+    public List<String> getGlobalSessionTrackingModes() {
+        return globalSessionTrackingModes;
     }
 }

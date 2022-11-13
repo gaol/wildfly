@@ -460,6 +460,15 @@ public class UndertowDeploymentInfoService implements Service<DeploymentInfo> {
                 } catch (IllegalArgumentException e) {
                     throw UndertowLogger.ROOT_LOGGER.unknownTrackingMode(str);
                 }
+            } // then check if global session tracking modes is set via attribute
+        } else if (!container.get().getGlobalSessionTrackingModes().isEmpty()) {
+            for (String str: container.get().getGlobalSessionTrackingModes()) {
+                try {
+                    SessionTrackingMode mode = SessionTrackingMode.valueOf(str);
+                    modes.add(mode);
+                } catch (IllegalArgumentException e) {
+                    throw UndertowLogger.ROOT_LOGGER.unknownTrackingMode(str);
+                }
             }
         }
         return modes;

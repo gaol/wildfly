@@ -486,6 +486,10 @@ be the same as that used by the listener that received the request.
 If `false`, following the `RequestDispatcher.forward()` call, they will
 point to the resource being forwarded to.
 
+| session-tracking-modes | The global session tracking modes for all deployments
+to the servlet container. This can also be set via system propety
+ `undertow.session.tracking-modes` + `.CONTAINER-NAME`, `undertow.session.tracking-modes`
+is used if the container name is omitted.
 
 |=======================================================================
 

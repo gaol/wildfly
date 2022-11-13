@@ -35,6 +35,7 @@ import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
+import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.client.helpers.MeasurementUnit;
 import org.jboss.as.controller.operations.validation.EnumValidator;
@@ -42,6 +43,8 @@ import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+
+import javax.servlet.SessionTrackingMode;
 
 /**
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a> (c) 2013 Red Hat Inc.
@@ -197,6 +200,14 @@ class ServletContainerDefinition extends PersistentResourceDefinition {
                     .setDefaultValue(ModelNode.FALSE)
                     .build();
 
+    protected static final AttributeDefinition SESSION_TRACKING_MODES =
+            new StringListAttributeDefinition.Builder("session-tracking-modes")
+                    .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
+                    .setRequired(false)
+                    .setAllowedValues(SessionTrackingMode.COOKIE.name(), SessionTrackingMode.URL.name(), SessionTrackingMode.SSL.name())
+                    .setAllowExpression(true)
+                    .build();
+
     private static final List<? extends PersistentResourceDefinition> CHILDREN;
     static final Collection<AttributeDefinition> ATTRIBUTES = Arrays.asList(
             ALLOW_NON_STANDARD_WRAPPERS,
@@ -218,7 +229,8 @@ class ServletContainerDefinition extends PersistentResourceDefinition {
             FILE_CACHE_MAX_FILE_SIZE,
             FILE_CACHE_TIME_TO_LIVE,
             DEFAULT_COOKIE_VERSION,
-            PRESERVE_PATH_ON_FORWARD
+            PRESERVE_PATH_ON_FORWARD,
+            SESSION_TRACKING_MODES
             );
 
     static final ServletContainerDefinition INSTANCE = new ServletContainerDefinition();
